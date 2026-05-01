@@ -1,0 +1,105 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  nombre    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Categoria {
+  id        String     @id @default(cuid())
+  nombre    String     @unique
+  slug      String     @unique
+  productos Producto[]
+  createdAt DateTime   @default(now())
+}
+
+model Producto {
+  id          String           @id @default(cuid())
+  nombre      String
+  marca       String
+  categoriaId String
+  categoria   Categoria        @relation(fields: [categoriaId], references: [id])
+  descripcion String           @db.Text
+  precio      Decimal          @db.Decimal(10, 2)
+  descuento   Int              @default(0)
+  imagenes    ProductoImagen[]
+  estado      EstadoProducto   @default(ACTIVO)
+  stock       Int              @default(0)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  itemsPedido ItemPedido[]
+}
+
+model ProductoImagen {
+  id         String   @id @default(cuid())
+  productoId String
+  producto   Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  path       String
+  orden      Int      @default(0)
+  createdAt  DateTime @default(now())
+}
+
+enum EstadoProducto {
+  ACTIVO
+  INACTIVO
+}
+
+model Cliente {
+  id        String   @id @default(cuid())
+  nombre    String
+  apellido  String
+  email     String   @unique
+  password  String
+  telefono  String?
+  direccion String?
+  ciudad    String?
+  pedidos   Pedido[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Pedido {
+  id         String       @id @default(cuid())
+  clienteId  String
+  cliente    Cliente      @relation(fields: [clienteId], references: [id])
+  total      Decimal      @db.Decimal(10, 2)
+  estado     EstadoPedido @default(PENDIENTE)
+  metodoPago String
+  direccion  String
+  ciudad     String
+  notas      String?      @db.Text
+  items      ItemPedido[]
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+}
+
+model ItemPedido {
+  id         String   @id @default(cuid())
+  pedidoId   String
+  pedido     Pedido   @relation(fields: [pedidoId], references: [id])
+  productoId String
+  producto   Producto @relation(fields: [productoId], references: [id])
+  cantidad   Int
+  precio     Decimal  @db.Decimal(10, 2)
+  createdAt  DateTime @default(now())
+}
+
+enum EstadoPedido {
+  PENDIENTE
+  PROCESANDO
+  ENVIADO
+  ENTREGADO
+  CANCELADO
+}
