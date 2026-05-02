@@ -30,7 +30,6 @@ export function ProductCard({ product }: { product: Product }) {
             <div className="text-xs text-muted-foreground line-through">${product.oldPrice.toFixed(2)}</div>
           )}
           <div className="text-xl font-black text-brand-blue">${product.price.toFixed(2)}</div>
-          <div className="text-[11px] text-success font-medium">12 cuotas de ${(product.price/12).toFixed(2)} sin intereses</div>
         </div>
         <button
           onClick={() => add(product)}

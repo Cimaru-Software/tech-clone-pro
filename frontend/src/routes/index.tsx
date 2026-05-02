@@ -59,7 +59,7 @@ function Home() {
       <section className="container-x py-10">
         <div className="flex items-end justify-between mb-6">
           <div>
-            <h2 className="text-2xl md:text-3xl font-black text-brand-blue">Categorías destacadas</h2>
+            <h2 className="text-2xl md:text-3xl font-black text-brand-blue">Categorías</h2>
             <p className="text-sm text-muted-foreground">Encuentra lo que necesitas</p>
           </div>
           <Link to="/tienda" className="text-sm font-bold text-brand-red hover:underline">Ver todas →</Link>

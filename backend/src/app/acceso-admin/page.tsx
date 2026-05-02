@@ -94,7 +94,7 @@ export default function AccesoAdminPage() {
               <label style={{ display: "block", fontSize: "0.75rem", fontWeight: "700", color: "#374151", marginBottom: "0.4rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                 Correo electrónico
               </label>
-              <input style={inp} type="email" value={email} onChange={e => setEmail(e.target.value)} required autoComplete="email" placeholder="admin@lacasadelcomputador.com"
+              <input style={inp} type="email" value={email} onChange={e => setEmail(e.target.value)} required autoComplete="email" placeholder="tu@mail.com"
                 onFocus={e => (e.target.style.borderColor = "#0B2C5F")} onBlur={e => (e.target.style.borderColor = "#e2e8f0")} />
             </div>
 

@@ -6,14 +6,46 @@ export type CartItem = {
   nombre: string;
   marca: string;
   precio: number;
+  precioOriginal: number;
   descuento: number;
   imagen: string;
   qty: number;
 };
 
+type AddableProduct = Partial<Producto> & {
+  id: string;
+  name?: string;
+  brand?: string;
+  price?: number;
+  image?: string;
+  oldPrice?: number;
+};
+
+function getDiscountedPrice(precio: number, descuento = 0) {
+  if (!Number.isFinite(precio) || precio <= 0) return 0;
+  if (!Number.isFinite(descuento) || descuento <= 0) return precio;
+  return Number((precio * (1 - Math.min(descuento, 100) / 100)).toFixed(2));
+}
+
+function normalizeCartItem(item: CartItem & { name?: string; brand?: string; price?: number; image?: string; oldPrice?: number }): CartItem {
+  const descuento = Number(item.descuento ?? 0);
+  const original = Number(item.precioOriginal ?? item.oldPrice ?? item.precio ?? item.price ?? 0);
+  const precio = descuento > 0 ? getDiscountedPrice(original, descuento) : Number(item.precio ?? item.price ?? original);
+  return {
+    ...item,
+    nombre: item.nombre || item.name || "",
+    marca: item.marca || item.brand || "",
+    precio,
+    precioOriginal: original,
+    imagen: item.imagen || item.image || "/placeholder-product.png",
+    descuento,
+    qty: Number(item.qty || 1),
+  };
+}
+
 type CartCtx = {
   items: CartItem[];
-  add: (p: Producto, qty?: number) => void;
+  add: (p: AddableProduct, qty?: number) => void;
   remove: (id: string) => void;
   setQty: (id: string, qty: number) => void;
   clear: () => void;
@@ -27,7 +59,8 @@ const Ctx = createContext<CartCtx | null>(null);
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
 
-function getImageUrl(producto: Producto): string {
+function getImageUrl(producto: AddableProduct): string {
+  if (producto.image) return producto.image;
   if (producto.imagenes && producto.imagenes.length > 0) {
     return `${BACKEND}${producto.imagenes[0].path}`;
   }
@@ -41,7 +74,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const raw = localStorage.getItem("lcdc_cart");
-      if (raw) setItems(JSON.parse(raw));
+      if (raw) setItems(JSON.parse(raw).map(normalizeCartItem));
     } catch {}
   }, []);
 
@@ -50,12 +83,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [items]);
 
   const add: CartCtx["add"] = (p, qty = 1) => {
+    const precioOriginal = Number(p.precio ?? p.oldPrice ?? p.price ?? 0);
+    const descuento = Number(p.descuento ?? (p.oldPrice && p.price ? Math.round((1 - p.price / p.oldPrice) * 100) : 0));
     const item: CartItem = {
       id: p.id,
-      nombre: p.nombre,
-      marca: p.marca,
-      precio: Number(p.precio),
-      descuento: p.descuento,
+      nombre: p.nombre || p.name || "",
+      marca: p.marca || p.brand || "",
+      precio: getDiscountedPrice(precioOriginal, descuento),
+      precioOriginal,
+      descuento,
       imagen: getImageUrl(p),
       qty,
     };
@@ -71,7 +107,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const setQty = (id: string, qty: number) => setItems((prev) => prev.map((i) => i.id === id ? { ...i, qty: Math.max(1, qty) } : i));
   const clear = () => setItems([]);
   const count = items.reduce((s, i) => s + i.qty, 0);
-  const subtotal = items.reduce((s, i) => s + i.qty * i.precio, 0);
+  const subtotal = items.reduce((s, i) => s + i.qty * Number(i.precio || 0), 0);
 
   return <Ctx.Provider value={{ items, add, remove, setQty, clear, count, subtotal, open, setOpen }}>{children}</Ctx.Provider>;
 }

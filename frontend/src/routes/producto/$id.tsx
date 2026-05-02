@@ -175,7 +175,6 @@ function ProductoDetalle() {
                   <span className="text-sm font-bold text-green-600 mb-1">Ahorras ${(precio - precioFinal).toFixed(2)}</span>
                 )}
               </div>
-              <div className="text-sm text-success font-medium mt-1">12 cuotas de ${(precioFinal / 12).toFixed(2)} sin intereses</div>
             </div>
 
             {/* Description */}

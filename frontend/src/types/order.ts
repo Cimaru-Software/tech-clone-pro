@@ -12,11 +12,14 @@ export interface Pedido {
   id: string;
   clienteId: string;
   total: number;
-  estado: "PENDIENTE" | "PROCESANDO" | "ENVIADO" | "ENTREGADO" | "CANCELADO";
+  estado: "PENDIENTE" | "PROCESANDO" | "ENVIADO" | "ENTREGADO" | "CANCELADO" | "PENDIENTE_VALIDACION" | "COMPROBANTE_RECHAZADO" | "COMPRA_APROBADA";
   metodoPago: string;
   direccion: string;
   ciudad: string;
+  provincia: string;
   notas?: string;
+  motivoRechazo?: string;
+  tipo?: "pedido" | "compra";
   items: ItemPedido[];
   createdAt: string;
 }
@@ -26,5 +29,6 @@ export interface CreatePedidoDto {
   metodoPago: string;
   direccion: string;
   ciudad: string;
+  provincia?: string;
   notas?: string;
 }

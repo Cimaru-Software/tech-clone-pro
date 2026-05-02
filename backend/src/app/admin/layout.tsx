@@ -45,6 +45,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             { href: "/admin/productos", label: "📦  Productos" },
             { href: "/admin/clientes", label: "👥  Clientes" },
             { href: "/admin/pedidos", label: "🛒  Pedidos" },
+            { href: "/admin/comprobantes", label: "✅  Validación de comprobantes" },
           ].map((item) => (
             <a
               key={item.href}

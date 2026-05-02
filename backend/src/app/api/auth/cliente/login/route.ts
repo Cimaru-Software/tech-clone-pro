@@ -28,7 +28,15 @@ export async function POST(request: NextRequest) {
 
     const response = NextResponse.json({
       ok: true,
-      cliente: { id: cliente.id, nombre: cliente.nombre, apellido: cliente.apellido, email: cliente.email },
+      cliente: {
+        id: cliente.id,
+        nombre: cliente.nombre,
+        apellido: cliente.apellido,
+        email: cliente.email,
+        telefono: cliente.telefono,
+        direccion: cliente.direccion,
+        ciudad: cliente.ciudad,
+      },
     });
     response.cookies.set("cliente_token", token, {
       httpOnly: true,

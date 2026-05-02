@@ -1,9 +1,17 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Search, ShoppingCart, User, MapPin, Menu, MessageCircle, ChevronDown, LogOut } from "lucide-react";
+import { Search, ShoppingCart, User, MapPin, Menu, MessageCircle, ChevronDown, LogOut, LogIn, UserPlus, Package } from "lucide-react";
 import { useState } from "react";
 import { useCart } from "@/context/CartContext";
 import { categories } from "@/data/products";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function Header() {
   const { count, setOpen } = useCart();
@@ -61,32 +69,6 @@ export function Header() {
             </div>
           </div>
 
-          {isAuthenticated && cliente ? (
-            <div className="hidden md:flex items-center gap-2 text-sm">
-              <Link to="/mi-cuenta" className="flex items-center gap-2 hover:text-brand-yellow">
-                <User className="h-5 w-5" />
-                <div className="leading-tight text-left">
-                  <div className="text-[10px] opacity-80">Bienvenido</div>
-                  <div className="font-semibold">{cliente.nombre}</div>
-                </div>
-              </Link>
-              <button onClick={handleLogout} className="hover:text-brand-red" title="Cerrar sesión">
-                <LogOut className="h-4 w-4" />
-              </button>
-            </div>
-          ) : (
-            <div className="hidden md:flex items-center gap-2 text-sm">
-              <Link to="/login" className="flex items-center gap-2 hover:text-brand-yellow">
-                <User className="h-5 w-5" />
-                <div className="leading-tight text-left">
-                  <div className="text-[10px] opacity-80">Hola, ingresa</div>
-                  <div className="font-semibold">Mi cuenta</div>
-                </div>
-              </Link>
-              <Link to="/registro" className="text-xs text-brand-red font-semibold hover:underline">Registro</Link>
-            </div>
-          )}
-
           <button onClick={() => setOpen(true)} className="relative flex items-center gap-2 hover:text-brand-yellow">
             <div className="relative">
               <ShoppingCart className="h-6 w-6" />
@@ -96,6 +78,65 @@ export function Header() {
             </div>
             <span className="hidden md:inline text-sm font-semibold">Carrito</span>
           </button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="hidden md:flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm hover:border-brand-blue hover:bg-secondary/70 transition-colors">
+                <span className="grid h-9 w-9 place-items-center rounded-full bg-brand-blue/10 text-brand-blue">
+                  <User className="h-5 w-5" />
+                </span>
+                <span className="min-w-0 leading-tight text-left">
+                  <span className="block text-[11px] text-muted-foreground">
+                    {isAuthenticated && cliente ? "Bienvenido" : "Hola, ingresa"}
+                  </span>
+                  <span className="block max-w-[92px] truncate font-bold text-brand-blue">
+                    {isAuthenticated && cliente ? cliente.nombre : "Mi cuenta"}
+                  </span>
+                </span>
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64 p-2">
+              {isAuthenticated && cliente ? (
+                <>
+                  <DropdownMenuLabel className="px-3 py-2">
+                    <span className="block text-sm font-bold text-foreground">{cliente.nombre} {cliente.apellido}</span>
+                    <span className="block truncate text-xs font-normal text-muted-foreground">{cliente.email}</span>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={() => navigate({ to: "/mi-cuenta" })} className="cursor-pointer rounded-md px-3 py-2.5">
+                    <User className="h-4 w-4 text-brand-blue" />
+                    Mi perfil
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => navigate({ to: "/mi-cuenta/pedidos" })} className="cursor-pointer rounded-md px-3 py-2.5">
+                    <Package className="h-4 w-4 text-brand-blue" />
+                    Mis pedidos
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={handleLogout} className="cursor-pointer rounded-md px-3 py-2.5 text-brand-red focus:text-brand-red">
+                    <LogOut className="h-4 w-4" />
+                    Cerrar sesión
+                  </DropdownMenuItem>
+                </>
+              ) : (
+                <>
+                  <DropdownMenuLabel className="px-3 py-2">
+                    <span className="block text-sm font-bold text-foreground">Mi cuenta</span>
+                    <span className="block text-xs font-normal text-muted-foreground">Accede para ver tus pedidos.</span>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={() => navigate({ to: "/login" })} className="cursor-pointer rounded-md px-3 py-2.5">
+                    <LogIn className="h-4 w-4 text-brand-blue" />
+                    Iniciar sesión
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => navigate({ to: "/registro" })} className="cursor-pointer rounded-md px-3 py-2.5">
+                    <UserPlus className="h-4 w-4 text-brand-red" />
+                    Registrarse
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -159,6 +200,25 @@ export function Header() {
       {mobileOpen && (
         <div className="lg:hidden bg-white border-b">
           <nav className="container-x py-2 flex flex-col">
+            {isAuthenticated && cliente ? (
+              <>
+                <Link to="/mi-cuenta" onClick={() => setMobileOpen(false)} className="py-2 border-b text-sm font-semibold text-brand-blue">
+                  Mi cuenta
+                </Link>
+                <button onClick={() => { setMobileOpen(false); handleLogout(); }} className="py-2 border-b text-left text-sm text-brand-red">
+                  Cerrar sesión
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/login" onClick={() => setMobileOpen(false)} className="py-2 border-b text-sm font-semibold text-brand-blue">
+                  Iniciar sesión
+                </Link>
+                <Link to="/registro" onClick={() => setMobileOpen(false)} className="py-2 border-b text-sm text-brand-red">
+                  Registrarse
+                </Link>
+              </>
+            )}
             {[
               { to: "/", label: "Inicio" },
               { to: "/tienda", label: "Tienda" },

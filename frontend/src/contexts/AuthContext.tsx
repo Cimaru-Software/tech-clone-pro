@@ -8,7 +8,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  register: (data: { nombre: string; apellido: string; email: string; password: string; telefono?: string }) => Promise<void>;
+  register: (data: { nombre: string; apellido: string; email: string; password: string; telefono: string; direccion: string; ciudad: string }) => Promise<void>;
   refresh: () => Promise<void>;
 }
 

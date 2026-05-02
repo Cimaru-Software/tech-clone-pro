@@ -7,6 +7,8 @@ export function useMyOrders() {
     queryKey: ["pedidos", "mine"],
     queryFn: () => orderService.getMine(),
     select: (data) => data.pedidos,
+    refetchOnWindowFocus: true,
+    refetchInterval: 15000,
   });
 }
 

@@ -9,7 +9,9 @@ const registerSchema = z.object({
   apellido: z.string().min(1),
   email: z.string().email(),
   password: z.string().min(6),
-  telefono: z.string().optional(),
+  telefono: z.string().trim().min(1),
+  direccion: z.string().trim().min(1),
+  ciudad: z.string().trim().min(1),
 });
 
 export async function POST(request: NextRequest) {
@@ -25,7 +27,7 @@ export async function POST(request: NextRequest) {
     const hashed = await bcrypt.hash(data.password, 10);
     const cliente = await prisma.cliente.create({
       data: { ...data, password: hashed },
-      select: { id: true, nombre: true, apellido: true, email: true, telefono: true },
+      select: { id: true, nombre: true, apellido: true, email: true, telefono: true, direccion: true, ciudad: true },
     });
 
     const token = await signClientToken({ id: cliente.id, email: cliente.email, role: "cliente" });

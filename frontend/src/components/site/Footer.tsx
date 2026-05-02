@@ -6,13 +6,13 @@ export function Footer() {
     <footer className="bg-brand-blue-dark text-white mt-16">
       <div className="container-x py-12 grid grid-cols-2 md:grid-cols-4 gap-8">
         <div className="col-span-2 md:col-span-1">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="h-10 w-10 rounded bg-brand-red grid place-items-center font-black">LC</div>
-            <div className="leading-tight">
-              <div className="font-black text-sm">LA CASA DEL</div>
-              <div className="font-black text-sm -mt-1">COMPUTADOR</div>
-            </div>
-          </div>
+          <Link to="/" className="inline-flex mb-4" aria-label="LA CASA DEL COMPUTADOR">
+            <img
+              src="/images/logo.png"
+              alt="LA CASA DEL COMPUTADOR"
+              className="h-14 w-auto object-contain"
+            />
+          </Link>
           <p className="text-sm text-white/70 mb-4">Tecnología para tu vida. Más de 15 años brindando soluciones tecnológicas a empresas y hogares en Ecuador.</p>
           <div className="flex gap-3">
             <a className="h-9 w-9 rounded bg-white/10 hover:bg-brand-red grid place-items-center" href="#"><Facebook className="h-4 w-4" /></a>

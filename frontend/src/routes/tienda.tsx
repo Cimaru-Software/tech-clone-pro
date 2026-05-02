@@ -57,7 +57,6 @@ function ProductCardBackend({ producto }: { producto: Producto }) {
             <div className="text-xs text-muted-foreground line-through">${precio.toFixed(2)}</div>
           )}
           <div className="text-xl font-black text-brand-blue">${precioFinal.toFixed(2)}</div>
-          <div className="text-[11px] text-success font-medium">12 cuotas de ${(precioFinal / 12).toFixed(2)} sin intereses</div>
         </div>
         <button
           onClick={(e) => { e.stopPropagation(); add(producto); }}

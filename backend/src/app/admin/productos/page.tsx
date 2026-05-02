@@ -1,5 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
+import Swal from "sweetalert2";
+import "sweetalert2/dist/sweetalert2.min.css";
 
 interface Categoria { id: string; nombre: string; slug: string; }
 interface ProductoImagen { id: string; path: string; orden: number; }
@@ -16,7 +18,7 @@ interface PreviewFile {
 
 const defaultForm = {
   nombre: "", marca: "", categoriaId: "", descripcion: "",
-  precio: 0, descuento: 0, stock: 0, estado: "ACTIVO" as const,
+  precio: 0, descuento: 0, stock: 0, estado: "ACTIVO" as Producto["estado"],
 };
 
 export default function ProductosPage() {
@@ -136,9 +138,35 @@ export default function ProductosPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("¿Eliminar este producto? Esta acción no se puede deshacer.")) return;
-    await fetch(`/api/productos/${id}`, { method: "DELETE" });
-    fetchProductos();
+    const result = await Swal.fire({
+      title: "Eliminar producto",
+      text: "Esta acción no se puede deshacer.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Eliminar",
+      cancelButtonText: "Cancelar",
+      confirmButtonColor: "#D71920",
+      cancelButtonColor: "#6b7280",
+    });
+    if (!result.isConfirmed) return;
+
+    try {
+      const res = await fetch(`/api/productos/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("No se pudo eliminar el producto");
+      await fetchProductos();
+      await Swal.fire({
+        title: "Producto eliminado",
+        icon: "success",
+        confirmButtonColor: "#0B2C5F",
+      });
+    } catch (error) {
+      await Swal.fire({
+        title: "No se pudo eliminar",
+        text: error instanceof Error ? error.message : "Intenta nuevamente.",
+        icon: "error",
+        confirmButtonColor: "#D71920",
+      });
+    }
   }
 
   const totalImages = existingImages.length + previewFiles.length;

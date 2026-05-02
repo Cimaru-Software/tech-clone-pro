@@ -12,14 +12,23 @@ const pedidoSchema = z.object({
   metodoPago: z.string().min(1),
   direccion: z.string().min(1),
   ciudad: z.string().min(1),
+  provincia: z.string().optional(),
   notas: z.string().optional(),
 });
+
+function getPrecioFinal(precio: unknown, descuento: number) {
+  const base = Number(precio);
+  if (!Number.isFinite(base) || base <= 0) return 0;
+  if (!Number.isFinite(descuento) || descuento <= 0) return base;
+  return Number((base * (1 - Math.min(descuento, 100) / 100)).toFixed(2));
+}
 
 export async function GET(request: NextRequest) {
   const adminToken = request.cookies.get("admin_token")?.value;
   const clienteToken = request.cookies.get("cliente_token")?.value;
+  const scope = request.nextUrl.searchParams.get("scope");
 
-  if (adminToken && await verifyAdminToken(adminToken)) {
+  if (scope === "admin" && adminToken && await verifyAdminToken(adminToken)) {
     const pedidos = await prisma.pedido.findMany({
       include: {
         cliente: { select: { nombre: true, apellido: true, email: true } },
@@ -33,13 +42,62 @@ export async function GET(request: NextRequest) {
   if (clienteToken) {
     const payload = await verifyClientToken(clienteToken);
     if (payload && typeof payload.id === "string") {
-      const pedidos = await prisma.pedido.findMany({
-        where: { clienteId: payload.id },
-        include: { items: { include: { producto: { include: { imagenes: { take: 1 } } } } } },
-        orderBy: { createdAt: "desc" },
-      });
-      return NextResponse.json({ pedidos });
+      const [pedidos, compras] = await Promise.all([
+        prisma.pedido.findMany({
+          where: { clienteId: payload.id },
+          include: { items: { include: { producto: { include: { imagenes: { take: 1 } } } } } },
+          orderBy: { createdAt: "desc" },
+        }),
+        prisma.compra.findMany({
+          where: { clienteId: payload.id },
+          include: {
+            pedido: { select: { id: true } },
+            items: { include: { producto: { include: { imagenes: { take: 1 } } } } },
+          },
+          orderBy: { createdAt: "desc" },
+        }),
+      ]);
+
+      const comprasSinPedido = compras
+        .filter((compra) => !(compra.estado === "APROBADO" && compra.pedido))
+        .map((compra) => ({
+          id: compra.id,
+          clienteId: compra.clienteId,
+          total: compra.total,
+          estado: compra.estado === "RECHAZADO"
+            ? "COMPROBANTE_RECHAZADO"
+            : compra.estado === "APROBADO"
+              ? "COMPRA_APROBADA"
+              : "PENDIENTE_VALIDACION",
+          metodoPago: compra.metodoPago,
+          direccion: compra.direccion,
+          ciudad: compra.ciudad,
+          provincia: compra.provincia,
+          notas: compra.notas,
+          motivoRechazo: compra.motivoRechazo,
+          items: compra.items,
+          createdAt: compra.createdAt,
+          tipo: "compra",
+        }));
+
+      const pedidosConTipo = pedidos.map((pedido) => ({ ...pedido, tipo: "pedido" }));
+      const historial = [...pedidosConTipo, ...comprasSinPedido].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+
+      return NextResponse.json({ pedidos: historial });
     }
+  }
+
+  if (adminToken && await verifyAdminToken(adminToken)) {
+    const pedidos = await prisma.pedido.findMany({
+      include: {
+        cliente: { select: { nombre: true, apellido: true, email: true } },
+        items: { include: { producto: { include: { imagenes: { take: 1 } } } } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    return NextResponse.json({ pedidos });
   }
 
   return NextResponse.json({ error: "No autorizado" }, { status: 401 });
@@ -57,7 +115,20 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const data = pedidoSchema.parse(body);
-    const total = data.items.reduce((acc, item) => acc + item.precio * item.cantidad, 0);
+    const productos = await prisma.producto.findMany({
+      where: { id: { in: data.items.map((item) => item.productoId) } },
+      select: { id: true, precio: true, descuento: true },
+    });
+    const precios = new Map(productos.map((producto) => [
+      producto.id,
+      getPrecioFinal(producto.precio, producto.descuento),
+    ]));
+    const itemsConPrecio = data.items.map((item) => {
+      const precio = precios.get(item.productoId);
+      if (!precio) throw new Error("Producto inválido");
+      return { ...item, precio };
+    });
+    const total = itemsConPrecio.reduce((acc, item) => acc + item.precio * item.cantidad, 0);
 
     const pedido = await prisma.pedido.create({
       data: {
@@ -66,9 +137,10 @@ export async function POST(request: NextRequest) {
         metodoPago: data.metodoPago,
         direccion: data.direccion,
         ciudad: data.ciudad,
+        provincia: data.provincia || "",
         notas: data.notas,
         items: {
-          create: data.items.map((item) => ({
+          create: itemsConPrecio.map((item) => ({
             productoId: item.productoId,
             cantidad: item.cantidad,
             precio: item.precio,
@@ -82,6 +154,9 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
+    }
+    if (error instanceof Error && error.message === "Producto inválido") {
+      return NextResponse.json({ error: "Producto inválido" }, { status: 400 });
     }
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }

@@ -10,7 +10,15 @@ export const Route = createFileRoute("/registro")({
 function RegistroPage() {
   const { register, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ nombre: "", apellido: "", email: "", password: "", telefono: "" });
+  const [form, setForm] = useState({
+    nombre: "",
+    apellido: "",
+    email: "",
+    password: "",
+    telefono: "",
+    direccion: "",
+    ciudad: "",
+  });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -24,7 +32,15 @@ function RegistroPage() {
     setLoading(true);
     setError("");
     try {
-      await register({ ...form, telefono: form.telefono || undefined });
+      await register({
+        nombre: form.nombre.trim(),
+        apellido: form.apellido.trim(),
+        email: form.email.trim(),
+        password: form.password,
+        telefono: form.telefono.trim(),
+        direccion: form.direccion.trim(),
+        ciudad: form.ciudad.trim(),
+      });
       navigate({ to: "/" });
     } catch (err: any) {
       setError(err.message || "Error al crear cuenta");
@@ -37,7 +53,7 @@ function RegistroPage() {
 
   return (
     <div className="min-h-screen bg-secondary flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
+      <div className="w-full max-w-2xl bg-white rounded-xl shadow-lg p-8">
         <h1 className="text-2xl font-black text-brand-blue mb-1">Crear cuenta</h1>
         <p className="text-sm text-muted-foreground mb-6">Únete para seguir tus pedidos y más beneficios.</p>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -60,8 +76,16 @@ function RegistroPage() {
             <input type="password" className={inputClass} value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} required placeholder="Mínimo 6 caracteres" minLength={6} />
           </div>
           <div>
-            <label className="block text-sm font-semibold mb-1">Teléfono / WhatsApp <span className="text-muted-foreground font-normal">(opcional)</span></label>
-            <input type="tel" className={inputClass} value={form.telefono} onChange={e => setForm(f => ({ ...f, telefono: e.target.value }))} placeholder="0999 999 999" />
+            <label className="block text-sm font-semibold mb-1">Teléfono / WhatsApp</label>
+            <input type="tel" className={inputClass} value={form.telefono} onChange={e => setForm(f => ({ ...f, telefono: e.target.value }))} required placeholder="0999 999 999" />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold mb-1">Dirección</label>
+            <input className={inputClass} value={form.direccion} onChange={e => setForm(f => ({ ...f, direccion: e.target.value }))} required placeholder="Av. Principal y calle secundaria" />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold mb-1">Ciudad</label>
+            <input className={inputClass} value={form.ciudad} onChange={e => setForm(f => ({ ...f, ciudad: e.target.value }))} required placeholder="Guayaquil" />
           </div>
           {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg">{error}</div>}
           <button

@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 
-type EstadoPedido = "PENDIENTE" | "PROCESANDO" | "ENVIADO" | "ENTREGADO" | "CANCELADO";
+type EstadoPedido = "PENDIENTE" | "ENTREGADO";
 
 interface ItemPedido {
   id: string;
@@ -17,6 +17,7 @@ interface Pedido {
   metodoPago: string;
   direccion: string;
   ciudad: string;
+  provincia: string;
   notas?: string;
   createdAt: string;
   cliente: { nombre: string; apellido: string; email: string };
@@ -25,10 +26,7 @@ interface Pedido {
 
 const estadoColors: Record<EstadoPedido, { bg: string; color: string }> = {
   PENDIENTE:   { bg: "#fef3c7", color: "#92400e" },
-  PROCESANDO:  { bg: "#dbeafe", color: "#1d4ed8" },
-  ENVIADO:     { bg: "#e0e7ff", color: "#3730a3" },
   ENTREGADO:   { bg: "#d1fae5", color: "#065f46" },
-  CANCELADO:   { bg: "#fee2e2", color: "#991b1b" },
 };
 
 export default function PedidosPage() {
@@ -38,7 +36,7 @@ export default function PedidosPage() {
 
   async function fetchPedidos() {
     setLoading(true);
-    const res = await fetch("/api/pedidos");
+    const res = await fetch("/api/pedidos?scope=admin");
     const data = await res.json();
     setPedidos(data.pedidos || []);
     setLoading(false);
@@ -83,7 +81,7 @@ export default function PedidosPage() {
                       onChange={e => changeEstado(p.id, e.target.value as EstadoPedido)}
                       style={{ background: colors.bg, color: colors.color, border: "none", borderRadius: "999px", padding: "0.3rem 0.75rem", fontSize: "0.75rem", fontWeight: "700", cursor: "pointer" }}
                     >
-                      {(["PENDIENTE","PROCESANDO","ENVIADO","ENTREGADO","CANCELADO"] as EstadoPedido[]).map(s => (
+                      {(["PENDIENTE","ENTREGADO"] as EstadoPedido[]).map(s => (
                         <option key={s} value={s}>{s}</option>
                       ))}
                     </select>
@@ -98,7 +96,7 @@ export default function PedidosPage() {
                 {isExpanded && (
                   <div style={{ borderTop: "1px solid #f3f4f6", padding: "1rem 1.5rem", background: "#fafafa" }}>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem", fontSize: "0.875rem" }}>
-                      <div><span style={{ color: "#9ca3af" }}>Dirección: </span>{p.direccion}, {p.ciudad}</div>
+                      <div><span style={{ color: "#9ca3af" }}>Dirección: </span>{p.direccion}, {p.ciudad}, {p.provincia}</div>
                       {p.notas && <div><span style={{ color: "#9ca3af" }}>Notas: </span>{p.notas}</div>}
                     </div>
                     <div style={{ fontWeight: "600", fontSize: "0.875rem", marginBottom: "0.5rem" }}>Productos ({p.items.length})</div>

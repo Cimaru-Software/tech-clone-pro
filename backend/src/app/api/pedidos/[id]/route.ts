@@ -38,6 +38,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   }
   const { id } = await params;
   const body = await request.json();
+  if (!["PENDIENTE", "ENTREGADO"].includes(body.estado)) {
+    return NextResponse.json({ error: "Estado inválido" }, { status: 400 });
+  }
   try {
     const pedido = await prisma.pedido.update({
       where: { id },

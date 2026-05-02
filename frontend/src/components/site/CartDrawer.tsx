@@ -28,6 +28,9 @@ export function CartDrawer() {
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium line-clamp-2">{i.nombre}</div>
                 <div className="text-xs text-muted-foreground">{i.marca}</div>
+                {i.descuento > 0 && (
+                  <div className="text-xs text-muted-foreground line-through">${i.precioOriginal.toFixed(2)}</div>
+                )}
                 <div className="text-brand-blue font-bold">${i.precio.toFixed(2)}</div>
                 <div className="flex items-center gap-2 mt-1">
                   <button onClick={() => setQty(i.id, i.qty - 1)} className="h-7 w-7 border rounded grid place-items-center hover:bg-secondary"><Minus className="h-3 w-3" /></button>
