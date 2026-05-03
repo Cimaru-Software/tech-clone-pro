@@ -8,12 +8,17 @@ export async function GET(request: NextRequest) {
   const categoria = searchParams.get("categoria");
   const estado = searchParams.get("estado");
   const search = searchParams.get("search");
+  const destacado = searchParams.get("destacado");
+  const conDescuento = searchParams.get("conDescuento");
 
   const productos = await prisma.producto.findMany({
     where: {
       ...(categoria && { categoria: { slug: categoria } }),
       ...(estado && estado !== "" && { estado: estado as "ACTIVO" | "INACTIVO" }),
       ...(!estado && estado !== "" && { estado: "ACTIVO" }),
+      ...(destacado === "true" && { destacado: true }),
+      ...(destacado === "false" && { destacado: false }),
+      ...(conDescuento === "true" && { descuento: { gt: 0 } }),
       ...(search && {
         OR: [
           { nombre: { contains: search, mode: "insensitive" } },
@@ -44,6 +49,7 @@ export async function POST(request: NextRequest) {
     descripcion: z.string().min(1),
     precio: z.number().positive(),
     descuento: z.number().min(0).max(100).default(0),
+    destacado: z.boolean().default(false),
     stock: z.number().int().min(0).default(0),
     estado: z.enum(["ACTIVO", "INACTIVO"]).default("ACTIVO"),
   });

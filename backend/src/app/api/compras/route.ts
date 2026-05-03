@@ -5,6 +5,7 @@ import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
+import { purchasePendingAdminEmail, purchasePendingCustomerEmail, sendMailSafe } from "@/lib/email";
 
 const itemSchema = z.object({
   productoId: z.string().min(1),
@@ -117,8 +118,26 @@ export async function POST(request: NextRequest) {
           })),
         },
       },
-      include: { items: { include: { producto: true } } },
+      include: {
+        cliente: { select: { nombre: true, apellido: true, email: true } },
+        items: { include: { producto: true } },
+      },
     });
+
+    await Promise.all([
+      sendMailSafe(purchasePendingAdminEmail({
+        compraId: compra.id,
+        cliente: compra.cliente,
+        total: compra.total,
+        comprobantePath,
+      })),
+      sendMailSafe(purchasePendingCustomerEmail({
+        compraId: compra.id,
+        cliente: compra.cliente,
+        total: compra.total,
+        items: compra.items,
+      })),
+    ]);
 
     return NextResponse.json({ compra }, { status: 201 });
   } catch (error) {

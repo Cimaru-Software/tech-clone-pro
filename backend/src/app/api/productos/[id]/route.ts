@@ -1,6 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyAdminToken } from "@/lib/auth";
+import { z } from "zod";
+
+const productoUpdateSchema = z.object({
+  nombre: z.string().min(1).optional(),
+  marca: z.string().min(1).optional(),
+  categoriaId: z.string().min(1).optional(),
+  descripcion: z.string().min(1).optional(),
+  precio: z.number().positive().optional(),
+  descuento: z.number().min(0).max(100).optional(),
+  destacado: z.boolean().optional(),
+  stock: z.number().int().min(0).optional(),
+  estado: z.enum(["ACTIVO", "INACTIVO"]).optional(),
+});
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -20,13 +33,17 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   const { id } = await params;
   const body = await request.json();
   try {
+    const data = productoUpdateSchema.parse(body);
     const producto = await prisma.producto.update({
       where: { id },
-      data: body,
+      data,
       include: { categoria: true, imagenes: true },
     });
     return NextResponse.json({ producto });
-  } catch {
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: "Datos inválidos", details: error.errors }, { status: 400 });
+    }
     return NextResponse.json({ error: "Error al actualizar" }, { status: 500 });
   }
 }

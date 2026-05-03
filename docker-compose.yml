@@ -28,18 +28,25 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      mailhog:
+        condition: service_started
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/techclone
       ADMIN_JWT_SECRET: admin-super-secret-change-in-production
       CLIENT_JWT_SECRET: client-super-secret-change-in-production
+      NEXT_PUBLIC_API_URL: http://localhost:3001
       NODE_ENV: development
+      SMTP_SERVER: mailhog
+      SMTP_PORT: 1025
+      MAIL_SENDER: "La Casa del Computador <no-reply@lacasadelcomputador.ec>"
+      MAIL_RECIPIENT: "admin@lacasadelcomputador.ec"
     volumes:
       - ./backend:/app
       - /app/node_modules
       - /app/.next
     ports:
       - "3001:3001"
-    command: sh -c "npx prisma db push --accept-data-loss && npx prisma db seed && npm run dev"
+    command: sh -c "npm install --no-package-lock && npx prisma db push --accept-data-loss && npx prisma db seed && npm run dev"
 
   frontend:
     build:
@@ -59,6 +66,15 @@ services:
     ports:
       - "5173:5173"
     command: npm run dev -- --host 0.0.0.0 --port 5173
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    platform: linux/amd64
+    container_name: techclone-mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
 
 volumes:
   pgdata:

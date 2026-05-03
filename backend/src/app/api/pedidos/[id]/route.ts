@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyAdminToken, verifyClientToken } from "@/lib/auth";
+import { orderDeliveredEmail, sendMailSafe } from "@/lib/email";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const adminToken = request.cookies.get("admin_token")?.value;
@@ -42,11 +43,25 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ error: "Estado inválido" }, { status: 400 });
   }
   try {
+    const current = await prisma.pedido.findUnique({
+      where: { id },
+      select: { estado: true },
+    });
+
     const pedido = await prisma.pedido.update({
       where: { id },
       data: { estado: body.estado },
       include: { cliente: true },
     });
+
+    if (current?.estado !== "ENTREGADO" && pedido.estado === "ENTREGADO") {
+      await sendMailSafe(orderDeliveredEmail({
+        pedidoId: pedido.id,
+        cliente: pedido.cliente,
+        total: pedido.total,
+      }));
+    }
+
     return NextResponse.json({ pedido });
   } catch {
     return NextResponse.json({ error: "Error al actualizar" }, { status: 500 });

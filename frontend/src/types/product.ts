@@ -19,6 +19,7 @@ export interface Producto {
   descripcion: string;
   precio: number;
   descuento: number;
+  destacado: boolean;
   imagenes: ProductoImagen[];
   estado: "ACTIVO" | "INACTIVO";
   stock: number;

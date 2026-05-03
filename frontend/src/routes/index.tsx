@@ -1,8 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { products, categories } from "@/data/products";
-import { ProductCard } from "@/components/site/ProductCard";
+import { useQuery } from "@tanstack/react-query";
+import { categories } from "@/data/products";
 import heroImg from "@/assets/hero-banner.jpg";
-import { ShieldCheck, Truck, Headphones, CreditCard, Wrench, Camera, Fingerprint, Cable, Cpu, ArrowRight } from "lucide-react";
+import { useCart } from "@/context/CartContext";
+import type { Producto } from "@/types/product";
+import { ShieldCheck, Truck, Headphones, CreditCard, Wrench, Camera, Fingerprint, Cable, Cpu, ArrowRight, ShoppingCart } from "lucide-react";
+
+const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -14,9 +18,67 @@ export const Route = createFileRoute("/")({
   component: Home,
 });
 
+function getImageUrl(producto: Producto): string {
+  if (producto.imagenes && producto.imagenes.length > 0) return `${BACKEND}${producto.imagenes[0].path}`;
+  return "";
+}
+
+function FeaturedProductCard({ producto }: { producto: Producto }) {
+  const { add } = useCart();
+  const precio = Number(producto.precio);
+  const precioFinal = producto.descuento > 0 ? precio * (1 - producto.descuento / 100) : precio;
+  const imgUrl = getImageUrl(producto);
+
+  return (
+    <Link to="/producto/$id" params={{ id: producto.id }} className="group bg-white border rounded-md overflow-hidden flex flex-col hover:shadow-card-hover transition-shadow">
+      <div className="relative aspect-square bg-secondary p-4">
+        {producto.descuento > 0 && (
+          <span className="absolute top-2 left-2 bg-brand-red text-white text-[10px] font-bold px-2 py-1 rounded z-10">-{producto.descuento}%</span>
+        )}
+        {imgUrl ? (
+          <img src={imgUrl} alt={producto.nombre} loading="lazy" className="w-full h-full object-contain group-hover:scale-105 transition-transform" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-4xl text-muted-foreground/30">📷</div>
+        )}
+      </div>
+      <div className="p-3 flex flex-col flex-1">
+        <div className="text-[11px] uppercase font-semibold text-brand-blue tracking-wide">{producto.marca}</div>
+        <h3 className="text-sm font-medium line-clamp-2 mt-0.5 min-h-[2.5rem]">{producto.nombre}</h3>
+        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{producto.descripcion}</p>
+        <div className="mt-2">
+          {producto.descuento > 0 && <div className="text-xs text-muted-foreground line-through">${precio.toFixed(2)}</div>}
+          <div className="text-xl font-black text-brand-blue">${precioFinal.toFixed(2)}</div>
+        </div>
+        <button
+          onClick={(e) => { e.preventDefault(); add(producto); }}
+          className="mt-3 bg-brand-red hover:bg-brand-red-dark text-white text-sm font-bold py-2 rounded flex items-center justify-center gap-2 transition-colors"
+        >
+          <ShoppingCart className="h-4 w-4" /> Agregar
+        </button>
+      </div>
+    </Link>
+  );
+}
+
 function Home() {
-  const featured = products.slice(0, 8);
-  const offers = products.filter((p) => p.oldPrice).slice(0, 4);
+  const { data: featured = [] } = useQuery<Producto[]>({
+    queryKey: ["productos", "destacados"],
+    queryFn: async () => {
+      const res = await fetch(`${BACKEND}/api/productos?estado=ACTIVO&destacado=true`);
+      const data = await res.json();
+      return data.productos || [];
+    },
+    staleTime: 1000 * 60 * 2,
+  });
+  const { data: offers = [] } = useQuery<Producto[]>({
+    queryKey: ["productos", "ofertas-relampago"],
+    queryFn: async () => {
+      const res = await fetch(`${BACKEND}/api/productos?estado=ACTIVO&conDescuento=true`);
+      const data = await res.json();
+      return data.productos || [];
+    },
+    staleTime: 1000 * 60 * 2,
+  });
 
   return (
     <div>
@@ -87,19 +149,20 @@ function Home() {
         </div>
       </section>
 
-      {/* FEATURED PRODUCTS */}
-      <section className="container-x py-10">
-        <div className="flex items-end justify-between mb-6">
-          <div>
-            <h2 className="text-2xl md:text-3xl font-black text-brand-blue">Productos destacados</h2>
-            <p className="text-sm text-muted-foreground">Lo más vendido del mes</p>
+      {featured.length > 0 && (
+        <section className="container-x py-10">
+          <div className="flex items-end justify-between mb-6">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-black text-brand-blue">Productos destacados</h2>
+              <p className="text-sm text-muted-foreground">Seleccionados por nuestro equipo</p>
+            </div>
+            <Link to="/tienda" className="text-sm font-bold text-brand-red hover:underline">Ver todos →</Link>
           </div>
-          <Link to="/tienda" className="text-sm font-bold text-brand-red hover:underline">Ver todos →</Link>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {featured.map((p) => <ProductCard key={p.id} product={p} />)}
-        </div>
-      </section>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {featured.map((p) => <FeaturedProductCard key={p.id} producto={p} />)}
+          </div>
+        </section>
+      )}
 
       {/* OFFERS BANNER */}
       <section className="container-x py-10">
@@ -148,13 +211,14 @@ function Home() {
         </div>
       </section>
 
-      {/* OFFERS */}
-      <section className="container-x py-10">
-        <h2 className="text-2xl md:text-3xl font-black text-brand-blue mb-6">⚡ Ofertas relámpago</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {offers.map((p) => <ProductCard key={p.id} product={p} />)}
-        </div>
-      </section>
+      {offers.length > 0 && (
+        <section className="container-x py-10">
+          <h2 className="text-2xl md:text-3xl font-black text-brand-blue mb-6">Ofertas relámpago</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {offers.map((p) => <FeaturedProductCard key={p.id} producto={p} />)}
+          </div>
+        </section>
+      )}
 
       {/* CERTIFICATIONS */}
       <section className="bg-white border-y py-10">

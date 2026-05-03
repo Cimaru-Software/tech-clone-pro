@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyAdminToken } from "@/lib/auth";
 import { EstadoCompra } from "@prisma/client";
+import { receiptApprovedEmail, receiptRejectedEmail, sendMailSafe } from "@/lib/email";
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const token = request.cookies.get("admin_token")?.value;
@@ -20,19 +21,24 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const compra = await prisma.compra.findUnique({
       where: { id },
-      include: { items: true, pedido: true },
+      include: {
+        cliente: { select: { nombre: true, apellido: true, email: true } },
+        items: true,
+        pedido: true,
+      },
     });
     if (!compra) return NextResponse.json({ error: "Compra no encontrada" }, { status: 404 });
     if (compra.estado !== "PENDIENTE") {
       return NextResponse.json({ error: "Esta compra ya fue validada" }, { status: 400 });
     }
 
+    const motivoRechazo = String(body.motivoRechazo || "Comprobante rechazado");
     const result = await prisma.$transaction(async (tx) => {
       const updated = await tx.compra.update({
         where: { id },
         data: {
           estado,
-          motivoRechazo: estado === "RECHAZADO" ? String(body.motivoRechazo || "Comprobante rechazado") : null,
+          motivoRechazo: estado === "RECHAZADO" ? motivoRechazo : null,
         },
       });
 
@@ -61,6 +67,22 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
       return { compra: updated, pedido };
     });
+
+    if (estado === "APROBADO") {
+      await sendMailSafe(receiptApprovedEmail({
+        compraId: compra.id,
+        pedidoId: result.pedido?.id,
+        cliente: compra.cliente,
+        total: compra.total,
+      }));
+    } else {
+      await sendMailSafe(receiptRejectedEmail({
+        compraId: compra.id,
+        cliente: compra.cliente,
+        total: compra.total,
+        motivo: motivoRechazo,
+      }));
+    }
 
     return NextResponse.json(result);
   } catch {

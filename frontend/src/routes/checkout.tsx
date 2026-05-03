@@ -296,7 +296,6 @@ function Checkout() {
               <div className="flex justify-between font-black text-lg text-brand-blue mt-3">
                 <span>Total</span><span>${total.toFixed(2)}</span>
               </div>
-              <div className="text-xs text-success mt-2">o 12 cuotas de ${(total / 12).toFixed(2)}</div>
               <div className="bg-secondary rounded p-2 text-xs mt-4 flex items-center gap-2"><Lock className="h-3 w-3" /> Compra protegida y encriptada</div>
             </aside>
           </div>

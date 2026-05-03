@@ -34,6 +34,7 @@ model Producto {
   descripcion String           @db.Text
   precio      Decimal          @db.Decimal(10, 2)
   descuento   Int              @default(0)
+  destacado   Boolean          @default(false)
   imagenes    ProductoImagen[]
   estado      EstadoProducto   @default(ACTIVO)
   stock       Int              @default(0)

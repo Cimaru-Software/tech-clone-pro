@@ -8,7 +8,7 @@ interface ProductoImagen { id: string; path: string; orden: number; }
 interface Producto {
   id: string; nombre: string; marca: string; categoriaId: string;
   categoria: Categoria; descripcion: string; precio: number; descuento: number;
-  stock: number; estado: "ACTIVO" | "INACTIVO"; imagenes: ProductoImagen[];
+  destacado: boolean; stock: number; estado: "ACTIVO" | "INACTIVO"; imagenes: ProductoImagen[];
 }
 
 interface PreviewFile {
@@ -18,7 +18,7 @@ interface PreviewFile {
 
 const defaultForm = {
   nombre: "", marca: "", categoriaId: "", descripcion: "",
-  precio: 0, descuento: 0, stock: 0, estado: "ACTIVO" as Producto["estado"],
+  precio: 0, descuento: 0, destacado: false, stock: 0, estado: "ACTIVO" as Producto["estado"],
 };
 
 export default function ProductosPage() {
@@ -59,7 +59,7 @@ export default function ProductosPage() {
 
   function openEdit(p: Producto) {
     setEditId(p.id);
-    setForm({ nombre: p.nombre, marca: p.marca, categoriaId: p.categoriaId, descripcion: p.descripcion, precio: Number(p.precio), descuento: p.descuento, stock: p.stock, estado: p.estado });
+    setForm({ nombre: p.nombre, marca: p.marca, categoriaId: p.categoriaId, descripcion: p.descripcion, precio: Number(p.precio), descuento: p.descuento, destacado: p.destacado, stock: p.stock, estado: p.estado });
     setPreviewFiles([]);
     setExistingImages(p.imagenes || []);
     setError("");
@@ -208,7 +208,7 @@ export default function ProductosPage() {
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
-                {["Imagen", "Nombre", "Marca", "Categoría", "Precio", "Dcto.", "Stock", "Estado", "Acciones"].map(h => (
+                {["Imagen", "Nombre", "Marca", "Categoría", "Precio", "Dcto.", "Destacado", "Stock", "Estado", "Acciones"].map(h => (
                   <th key={h} style={{ textAlign: "left", padding: "0.875rem 1rem", fontSize: "0.7rem", fontWeight: "700", color: "#64748b", textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>{h}</th>
                 ))}
               </tr>
@@ -237,6 +237,9 @@ export default function ProductosPage() {
                   <td style={{ padding: "0.75rem 1rem", fontSize: "0.875rem" }}>
                     {p.descuento > 0 ? <span style={{ background: "#fef3c7", color: "#92400e", padding: "0.2rem 0.5rem", borderRadius: "6px", fontWeight: "700", fontSize: "0.75rem" }}>{p.descuento}%</span> : <span style={{ color: "#cbd5e1" }}>—</span>}
                   </td>
+                  <td style={{ padding: "0.75rem 1rem", fontSize: "0.875rem" }}>
+                    {p.destacado ? <span style={{ background: "#dbeafe", color: "#1d4ed8", padding: "0.2rem 0.5rem", borderRadius: "6px", fontWeight: "700", fontSize: "0.75rem" }}>Sí</span> : <span style={{ color: "#cbd5e1" }}>—</span>}
+                  </td>
                   <td style={{ padding: "0.75rem 1rem", fontSize: "0.875rem", color: p.stock === 0 ? "#ef4444" : "#475569", fontWeight: p.stock === 0 ? "700" : "400" }}>{p.stock}</td>
                   <td style={{ padding: "0.75rem 1rem" }}>
                     <span style={{ background: p.estado === "ACTIVO" ? "#dcfce7" : "#fee2e2", color: p.estado === "ACTIVO" ? "#166534" : "#991b1b", padding: "0.25rem 0.65rem", borderRadius: "999px", fontSize: "0.7rem", fontWeight: "700", textTransform: "uppercase" as const }}>
@@ -253,7 +256,7 @@ export default function ProductosPage() {
               ))}
               {productos.length === 0 && (
                 <tr>
-                  <td colSpan={9} style={{ padding: "4rem", textAlign: "center", color: "#94a3b8" }}>
+                  <td colSpan={10} style={{ padding: "4rem", textAlign: "center", color: "#94a3b8" }}>
                     <div style={{ fontSize: "2.5rem", marginBottom: "0.75rem" }}>📦</div>
                     <div style={{ fontWeight: "600", marginBottom: "0.25rem" }}>Sin productos aún</div>
                     <div style={{ fontSize: "0.875rem" }}>Crea tu primer producto con el botón de arriba</div>
@@ -319,6 +322,18 @@ export default function ProductosPage() {
                     <option value="INACTIVO">Inactivo</option>
                   </select>
                 </div>
+                <label style={{ gridColumn: "1 / -1", display: "flex", alignItems: "center", gap: "0.65rem", background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: "10px", padding: "0.85rem 1rem", cursor: "pointer" }}>
+                  <input
+                    type="checkbox"
+                    checked={form.destacado}
+                    onChange={e => setForm(f => ({ ...f, destacado: e.target.checked }))}
+                    style={{ width: "18px", height: "18px", accentColor: "#0B2C5F" }}
+                  />
+                  <span>
+                    <span style={{ display: "block", fontSize: "0.875rem", fontWeight: "700", color: "#0f172a" }}>Producto destacado</span>
+                    <span style={{ display: "block", fontSize: "0.75rem", color: "#64748b", marginTop: "0.15rem" }}>Se mostrará en la sección de productos destacados de la página inicial.</span>
+                  </span>
+                </label>
               </div>
 
               {/* Images section */}

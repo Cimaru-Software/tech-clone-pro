@@ -21,6 +21,7 @@ import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as MiCuentaIndexRouteImport } from './routes/mi-cuenta/index'
 import { Route as ProductoIdRouteImport } from './routes/producto/$id'
+import { Route as ProductIdRouteImport } from './routes/product/$id'
 import { Route as MiCuentaPedidosRouteImport } from './routes/mi-cuenta/pedidos'
 
 const TiendaRoute = TiendaRouteImport.update({
@@ -83,6 +84,11 @@ const ProductoIdRoute = ProductoIdRouteImport.update({
   path: '/producto/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProductIdRoute = ProductIdRouteImport.update({
+  id: '/product/$id',
+  path: '/product/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MiCuentaPedidosRoute = MiCuentaPedidosRouteImport.update({
   id: '/mi-cuenta/pedidos',
   path: '/mi-cuenta/pedidos',
@@ -101,6 +107,7 @@ export interface FileRoutesByFullPath {
   '/servicios': typeof ServiciosRoute
   '/tienda': typeof TiendaRoute
   '/mi-cuenta/pedidos': typeof MiCuentaPedidosRoute
+  '/product/$id': typeof ProductIdRoute
   '/producto/$id': typeof ProductoIdRoute
   '/mi-cuenta/': typeof MiCuentaIndexRoute
 }
@@ -116,6 +123,7 @@ export interface FileRoutesByTo {
   '/servicios': typeof ServiciosRoute
   '/tienda': typeof TiendaRoute
   '/mi-cuenta/pedidos': typeof MiCuentaPedidosRoute
+  '/product/$id': typeof ProductIdRoute
   '/producto/$id': typeof ProductoIdRoute
   '/mi-cuenta': typeof MiCuentaIndexRoute
 }
@@ -132,6 +140,7 @@ export interface FileRoutesById {
   '/servicios': typeof ServiciosRoute
   '/tienda': typeof TiendaRoute
   '/mi-cuenta/pedidos': typeof MiCuentaPedidosRoute
+  '/product/$id': typeof ProductIdRoute
   '/producto/$id': typeof ProductoIdRoute
   '/mi-cuenta/': typeof MiCuentaIndexRoute
 }
@@ -149,6 +158,7 @@ export interface FileRouteTypes {
     | '/servicios'
     | '/tienda'
     | '/mi-cuenta/pedidos'
+    | '/product/$id'
     | '/producto/$id'
     | '/mi-cuenta/'
   fileRoutesByTo: FileRoutesByTo
@@ -164,6 +174,7 @@ export interface FileRouteTypes {
     | '/servicios'
     | '/tienda'
     | '/mi-cuenta/pedidos'
+    | '/product/$id'
     | '/producto/$id'
     | '/mi-cuenta'
   id:
@@ -179,6 +190,7 @@ export interface FileRouteTypes {
     | '/servicios'
     | '/tienda'
     | '/mi-cuenta/pedidos'
+    | '/product/$id'
     | '/producto/$id'
     | '/mi-cuenta/'
   fileRoutesById: FileRoutesById
@@ -195,6 +207,7 @@ export interface RootRouteChildren {
   ServiciosRoute: typeof ServiciosRoute
   TiendaRoute: typeof TiendaRoute
   MiCuentaPedidosRoute: typeof MiCuentaPedidosRoute
+  ProductIdRoute: typeof ProductIdRoute
   ProductoIdRoute: typeof ProductoIdRoute
   MiCuentaIndexRoute: typeof MiCuentaIndexRoute
 }
@@ -285,6 +298,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProductoIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/product/$id': {
+      id: '/product/$id'
+      path: '/product/$id'
+      fullPath: '/product/$id'
+      preLoaderRoute: typeof ProductIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/mi-cuenta/pedidos': {
       id: '/mi-cuenta/pedidos'
       path: '/mi-cuenta/pedidos'
@@ -307,6 +327,7 @@ const rootRouteChildren: RootRouteChildren = {
   ServiciosRoute: ServiciosRoute,
   TiendaRoute: TiendaRoute,
   MiCuentaPedidosRoute: MiCuentaPedidosRoute,
+  ProductIdRoute: ProductIdRoute,
   ProductoIdRoute: ProductoIdRoute,
   MiCuentaIndexRoute: MiCuentaIndexRoute,
 }
