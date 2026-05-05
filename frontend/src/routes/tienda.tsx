@@ -1,6 +1,5 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { Link, useNavigate } from "@/lib/router";
+import { useEffect, useState, useMemo } from "react";
 import { ChevronRight, SlidersHorizontal, Search, ShoppingCart } from "lucide-react";
 import type { Producto, Categoria } from "@/types/product";
 import { useCart } from "@/context/CartContext";
@@ -13,16 +12,6 @@ function getImageUrl(producto: Producto): string {
   }
   return "";
 }
-
-export const Route = createFileRoute("/tienda")({
-  head: () => ({
-    meta: [
-      { title: "Tienda — Laptops, PCs, CCTV y más | La Casa del Computador" },
-      { name: "description", content: "Compra computadoras Ecuador, laptops, cámaras de seguridad, biometría y más con envío y garantía." },
-    ],
-  }),
-  component: Tienda,
-});
 
 function ProductCardBackend({ producto }: { producto: Producto }) {
   const { add } = useCart();
@@ -69,32 +58,43 @@ function ProductCardBackend({ producto }: { producto: Producto }) {
   );
 }
 
-function Tienda() {
+export default function Tienda() {
   const [cat, setCat] = useState<string | null>(null);
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [maxPrice, setMaxPrice] = useState(5000);
   const [sort, setSort] = useState("relevance");
   const [search, setSearch] = useState("");
+  const [productos, setProductos] = useState<Producto[]>([]);
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const { data: productos = [], isLoading } = useQuery<Producto[]>({
-    queryKey: ["productos"],
-    queryFn: async () => {
-      const res = await fetch(`${BACKEND}/api/productos?estado=ACTIVO`);
-      const data = await res.json();
-      return data.productos || [];
-    },
-    staleTime: 1000 * 60 * 2,
-  });
+  useEffect(() => {
+    let active = true;
 
-  const { data: categorias = [] } = useQuery<Categoria[]>({
-    queryKey: ["categorias"],
-    queryFn: async () => {
-      const res = await fetch(`${BACKEND}/api/categorias`);
-      const data = await res.json();
-      return data.categorias || [];
-    },
-    staleTime: 1000 * 60 * 10,
-  });
+    async function loadStore() {
+      setIsLoading(true);
+      try {
+        const [productosRes, categoriasRes] = await Promise.all([
+          fetch(`${BACKEND}/api/productos?estado=ACTIVO`),
+          fetch(`${BACKEND}/api/categorias`),
+        ]);
+        const productosData = await productosRes.json();
+        const categoriasData = await categoriasRes.json();
+        if (!active) return;
+        setProductos(productosData.productos || []);
+        setCategorias(categoriasData.categorias || []);
+      } catch {
+        if (!active) return;
+        setProductos([]);
+        setCategorias([]);
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    }
+
+    loadStore();
+    return () => { active = false; };
+  }, []);
 
   // Derive unique brands from real products
   const marcasDisponibles = useMemo(() => {

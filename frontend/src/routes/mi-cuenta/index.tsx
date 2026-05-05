@@ -1,14 +1,9 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@/lib/router";
 import { useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { User, Package, LogOut, Mail, Phone, MapPin, Building2 } from "lucide-react";
 
-export const Route = createFileRoute("/mi-cuenta/")({
-  head: () => ({ meta: [{ title: "Mi Cuenta — La Casa del Computador" }] }),
-  component: MiCuentaPage,
-});
-
-function MiCuentaPage() {
+export default function MiCuentaPage() {
   const { cliente, isAuthenticated, isLoading, logout } = useAuth();
   const navigate = useNavigate();
 

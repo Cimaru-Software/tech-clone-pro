@@ -1,17 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link } from "@/lib/router";
 import { Target, Eye, Heart, Award, Users, Building2, ShieldCheck } from "lucide-react";
 
-export const Route = createFileRoute("/nosotros")({
-  head: () => ({
-    meta: [
-      { title: "Nosotros — La Casa del Computador | 15 años en Ecuador" },
-      { name: "description", content: "Conoce La Casa del Computador. Más de 15 años entregando tecnología y soluciones de seguridad en Ecuador." },
-    ],
-  }),
-  component: Nosotros,
-});
-
-function Nosotros() {
+export default function Nosotros() {
   return (
     <div>
       <section className="gradient-hero text-white py-16">

@@ -1,32 +1,45 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { Link, useParams } from "@/lib/router";
+import { useEffect, useState } from "react";
 import { ChevronRight, ChevronLeft, ShoppingCart, Tag, Layers } from "lucide-react";
 import type { Producto } from "@/types/product";
 import { useCart } from "@/context/CartContext";
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
 
-export const Route = createFileRoute("/producto/$id")({
-  component: ProductoDetalle,
-});
-
-function ProductoDetalle() {
-  const { id } = Route.useParams();
+export default function ProductoDetalle() {
+  const { id = "" } = useParams();
   const { add } = useCart();
   const [imgIdx, setImgIdx] = useState(0);
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
+  const [producto, setProducto] = useState<Producto | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
 
-  const { data: producto, isLoading, isError } = useQuery<Producto>({
-    queryKey: ["producto", id],
-    queryFn: async () => {
-      const res = await fetch(`${BACKEND}/api/productos/${id}`);
-      if (!res.ok) throw new Error("Producto no encontrado");
-      const data = await res.json();
-      return data.producto;
-    },
-  });
+  useEffect(() => {
+    let active = true;
+
+    async function loadProduct() {
+      setIsLoading(true);
+      setIsError(false);
+      try {
+        const res = await fetch(`${BACKEND}/api/productos/${id}`);
+        if (!res.ok) throw new Error("Producto no encontrado");
+        const data = await res.json();
+        if (active) setProducto(data.producto);
+      } catch {
+        if (active) {
+          setProducto(null);
+          setIsError(true);
+        }
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    }
+
+    loadProduct();
+    return () => { active = false; };
+  }, [id]);
 
   if (isLoading) {
     return (
@@ -64,6 +77,7 @@ function ProductoDetalle() {
   function next() { setImgIdx((i) => (i === imagenes.length - 1 ? 0 : i + 1)); }
 
   function handleAdd() {
+    if (!producto) return;
     add(producto, qty);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);

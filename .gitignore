@@ -1,0 +1,6 @@
+# Runtime uploads
+backend/public/images/comprobantes/
+backend/public/images/productos/
+
+# Keep static/public brand assets trackable
+!backend/public/images/logo.png

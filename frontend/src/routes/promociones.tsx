@@ -1,18 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link } from "@/lib/router";
 import { products } from "@/data/products";
 import { ProductCard } from "@/components/site/ProductCard";
 
-export const Route = createFileRoute("/promociones")({
-  head: () => ({
-    meta: [
-      { title: "Promociones — Ofertas en tecnología | La Casa del Computador" },
-      { name: "description", content: "Descuentos en laptops, computadoras, cámaras CCTV y más. Hasta 30% OFF y 12 cuotas sin intereses." },
-    ],
-  }),
-  component: Promos,
-});
-
-function Promos() {
+export default function Promos() {
   const offers = products.filter((p) => p.oldPrice);
   return (
     <div>

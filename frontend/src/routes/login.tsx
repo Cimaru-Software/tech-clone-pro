@@ -1,13 +1,8 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@/lib/router";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 
-export const Route = createFileRoute("/login")({
-  head: () => ({ meta: [{ title: "Iniciar Sesión — La Casa del Computador" }] }),
-  component: LoginPage,
-});
-
-function LoginPage() {
+export default function LoginPage() {
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");

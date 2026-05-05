@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link } from "@/lib/router";
 import { Facebook, Instagram, Youtube, Mail, Phone, MapPin } from "lucide-react";
 
 export function Footer() {

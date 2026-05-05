@@ -1,13 +1,8 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@/lib/router";
 import { useEffect, useState } from "react";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { CheckCircle2, ChevronRight, Lock, Truck, CreditCard, Upload } from "lucide-react";
-
-export const Route = createFileRoute("/checkout")({
-  head: () => ({ meta: [{ title: "Checkout — La Casa del Computador" }] }),
-  component: Checkout,
-});
 
 const ECUADOR_PROVINCES = [
   "Azuay",
@@ -36,7 +31,7 @@ const ECUADOR_PROVINCES = [
   "Zamora Chinchipe",
 ];
 
-function Checkout() {
+export default function Checkout() {
   const { items, subtotal, clear } = useCart();
   const { cliente, isAuthenticated, isLoading } = useAuth();
   const [step, setStep] = useState(1);

@@ -1,20 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link } from "@/lib/router";
 import { useState } from "react";
 import cctvImg from "@/assets/cat-cctv.jpg";
 import netImg from "@/assets/cat-network.jpg";
 import bioImg from "@/assets/cat-biometric.jpg";
 import deskImg from "@/assets/cat-desktop.jpg";
 import { Quote, ArrowRight } from "lucide-react";
-
-export const Route = createFileRoute("/proyectos")({
-  head: () => ({
-    meta: [
-      { title: "Proyectos — Casos de éxito en seguridad y tecnología | LCDC" },
-      { name: "description", content: "Proyectos de instalación de CCTV, redes, biometría y cercos eléctricos en empresas e instituciones de Ecuador." },
-    ],
-  }),
-  component: Proyectos,
-});
 
 const projects = [
   { cat: "cctv", t: "Centro Comercial Mall del Sur", d: "120 cámaras IP 4K + central de monitoreo", img: cctvImg },
@@ -32,7 +22,7 @@ const cats = [
   { k: "corporativo", l: "Corporativo" },
 ];
 
-function Proyectos() {
+export default function Proyectos() {
   const [tab, setTab] = useState("all");
   const list = tab === "all" ? projects : projects.filter((p) => p.cat === tab);
   return (

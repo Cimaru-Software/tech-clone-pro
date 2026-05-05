@@ -1,21 +1,55 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useState } from "react";
 import { orderService } from "@/services/orderService";
-import { CreatePedidoDto } from "@/types";
+import { CreatePedidoDto, Pedido } from "@/types";
 
 export function useMyOrders() {
-  return useQuery({
-    queryKey: ["pedidos", "mine"],
-    queryFn: () => orderService.getMine(),
-    select: (data) => data.pedidos,
-    refetchOnWindowFocus: true,
-    refetchInterval: 15000,
-  });
+  const [data, setData] = useState<Pedido[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const refetch = useCallback(async () => {
+    const response = await orderService.getMine();
+    setData(response.pedidos);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    async function load() {
+      try {
+        const response = await orderService.getMine();
+        if (active) setData(response.pedidos);
+      } catch {
+        if (active) setData([]);
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    }
+
+    load();
+    const interval = window.setInterval(load, 15000);
+    window.addEventListener("focus", load);
+
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+      window.removeEventListener("focus", load);
+    };
+  }, []);
+
+  return { data, isLoading, refetch };
 }
 
 export function useCreateOrder() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (data: CreatePedidoDto) => orderService.create(data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["pedidos"] }),
-  });
+  const [isPending, setIsPending] = useState(false);
+
+  async function mutateAsync(data: CreatePedidoDto) {
+    setIsPending(true);
+    try {
+      return await orderService.create(data);
+    } finally {
+      setIsPending(false);
+    }
+  }
+
+  return { mutateAsync, isPending };
 }

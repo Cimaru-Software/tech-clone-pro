@@ -1,15 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { Clock, Mail, MapPin, MessageCircle } from "lucide-react";
-
-export const Route = createFileRoute("/contacto")({
-  head: () => ({
-    meta: [
-      { title: "Contacto - La Casa del Computador | La Libertad, Ecuador" },
-      { name: "description", content: "Contáctanos por WhatsApp, correo o visita nuestras sedes en La Libertad." },
-    ],
-  }),
-  component: Contacto,
-});
 
 const locations = [
   {
@@ -26,7 +15,7 @@ const locations = [
   },
 ];
 
-function Contacto() {
+export default function Contacto() {
   return (
     <div>
       <section className="gradient-hero text-white py-14">

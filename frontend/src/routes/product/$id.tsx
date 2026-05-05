@@ -1,12 +1,8 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useNavigate, useParams } from "@/lib/router";
 import { useEffect } from "react";
 
-export const Route = createFileRoute("/product/$id")({
-  component: ProductRedirect,
-});
-
-function ProductRedirect() {
-  const { id } = Route.useParams();
+export default function ProductRedirect() {
+  const { id = "" } = useParams();
   const navigate = useNavigate();
 
   useEffect(() => {

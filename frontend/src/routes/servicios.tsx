@@ -1,15 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link } from "@/lib/router";
 import { Wrench, Camera, Zap, Fingerprint, Cable, CheckCircle2, ArrowRight, ShieldCheck } from "lucide-react";
-
-export const Route = createFileRoute("/servicios")({
-  head: () => ({
-    meta: [
-      { title: "Servicios Técnicos — Reparación PC, CCTV, Biometría | LCDC" },
-      { name: "description", content: "Servicio técnico computadoras, instalación de cámaras CCTV, cercos eléctricos, biometría y cableado estructurado en Guayaquil y todo Ecuador." },
-    ],
-  }),
-  component: Servicios,
-});
 
 const services = [
   { i: Wrench, t: "Reparación de PC y Laptops", d: "Diagnóstico gratuito, mantenimiento preventivo y correctivo, recuperación de datos y actualización de hardware.", color: "bg-brand-blue" },
@@ -20,7 +10,7 @@ const services = [
   { i: ShieldCheck, t: "Soporte Corporativo", d: "Mantenimiento de TI para empresas, soporte remoto y on-site con SLA garantizado.", color: "bg-brand-red" },
 ];
 
-function Servicios() {
+export default function Servicios() {
   return (
     <div>
       <section className="gradient-hero text-white py-16">

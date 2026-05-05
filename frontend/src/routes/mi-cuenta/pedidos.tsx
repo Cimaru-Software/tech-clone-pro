@@ -1,13 +1,8 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@/lib/router";
 import { useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMyOrders } from "@/hooks/useOrders";
 import { MessageCircle, Package, User, LogOut } from "lucide-react";
-
-export const Route = createFileRoute("/mi-cuenta/pedidos")({
-  head: () => ({ meta: [{ title: "Mis Pedidos — La Casa del Computador" }] }),
-  component: MisPedidosPage,
-});
 
 const estadoColors: Record<string, string> = {
   PENDIENTE:  "bg-yellow-100 text-yellow-800",
@@ -34,7 +29,7 @@ function imageUrl(path?: string) {
   return `${BACKEND_URL}${path}`;
 }
 
-function MisPedidosPage() {
+export default function MisPedidosPage() {
   const { cliente, isAuthenticated, isLoading, logout } = useAuth();
   const navigate = useNavigate();
   const { data: pedidos, isLoading: loadingPedidos } = useMyOrders();

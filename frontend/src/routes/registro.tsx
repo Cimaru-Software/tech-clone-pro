@@ -1,13 +1,8 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@/lib/router";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 
-export const Route = createFileRoute("/registro")({
-  head: () => ({ meta: [{ title: "Crear cuenta — La Casa del Computador" }] }),
-  component: RegistroPage,
-});
-
-function RegistroPage() {
+export default function RegistroPage() {
   const { register, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({

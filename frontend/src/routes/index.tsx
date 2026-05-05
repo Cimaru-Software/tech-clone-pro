@@ -1,5 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { Link } from "@/lib/router";
+import { useEffect, useState } from "react";
 import { categories } from "@/data/products";
 import heroImg from "@/assets/hero-banner.jpg";
 import { useCart } from "@/context/CartContext";
@@ -7,16 +7,6 @@ import type { Producto } from "@/types/product";
 import { ShieldCheck, Truck, Headphones, CreditCard, Wrench, Camera, Fingerprint, Cable, Cpu, ArrowRight, ShoppingCart } from "lucide-react";
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
-
-export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "La Casa del Computador — Computadoras, CCTV y Servicios | Ecuador" },
-      { name: "description", content: "Computadoras Ecuador, laptops, cámaras de seguridad Guayaquil, biometría, cercos eléctricos y servicio técnico. Envío nacional." },
-    ],
-  }),
-  component: Home,
-});
 
 function getImageUrl(producto: Producto): string {
   if (producto.imagenes && producto.imagenes.length > 0) return `${BACKEND}${producto.imagenes[0].path}`;
@@ -60,25 +50,34 @@ function FeaturedProductCard({ producto }: { producto: Producto }) {
   );
 }
 
-function Home() {
-  const { data: featured = [] } = useQuery<Producto[]>({
-    queryKey: ["productos", "destacados"],
-    queryFn: async () => {
+export default function Home() {
+  const [featured, setFeatured] = useState<Producto[]>([]);
+  const [offers, setOffers] = useState<Producto[]>([]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadProducts() {
+      try {
       const res = await fetch(`${BACKEND}/api/productos?estado=ACTIVO&destacado=true`);
       const data = await res.json();
-      return data.productos || [];
-    },
-    staleTime: 1000 * 60 * 2,
-  });
-  const { data: offers = [] } = useQuery<Producto[]>({
-    queryKey: ["productos", "ofertas-relampago"],
-    queryFn: async () => {
-      const res = await fetch(`${BACKEND}/api/productos?estado=ACTIVO&conDescuento=true`);
-      const data = await res.json();
-      return data.productos || [];
-    },
-    staleTime: 1000 * 60 * 2,
-  });
+        if (active) setFeatured(data.productos || []);
+      } catch {
+        if (active) setFeatured([]);
+      }
+
+      try {
+        const res = await fetch(`${BACKEND}/api/productos?estado=ACTIVO&conDescuento=true`);
+        const data = await res.json();
+        if (active) setOffers(data.productos || []);
+      } catch {
+        if (active) setOffers([]);
+      }
+    }
+
+    loadProducts();
+    return () => { active = false; };
+  }, []);
 
   return (
     <div>
