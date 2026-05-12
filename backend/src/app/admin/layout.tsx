@@ -43,6 +43,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {[
             { href: "/admin", label: "📊  Dashboard" },
             { href: "/admin/productos", label: "📦  Productos" },
+            { href: "/admin/banners-hero", label: "🖼️  Banners Hero" },
+            { href: "/admin/certificados", label: "🏅  Certificados" },
+            { href: "/admin/banner-promocion", label: "🎯  Banner Promoción" },
+            { href: "/admin/noticias", label: "📰  Noticias" },
             { href: "/admin/clientes", label: "👥  Clientes" },
             { href: "/admin/pedidos", label: "🛒  Pedidos" },
             { href: "/admin/comprobantes", label: "✅  Validación de comprobantes" },

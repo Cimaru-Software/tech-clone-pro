@@ -8,7 +8,7 @@ export default function Nosotros() {
         <div className="container-x text-center">
           <span className="bg-brand-red text-xs font-bold px-3 py-1 rounded">SOBRE NOSOTROS</span>
           <h1 className="text-4xl md:text-5xl font-black mt-4">Tecnología que transforma vidas</h1>
-          <p className="mt-3 text-white/85 max-w-2xl mx-auto">Desde 2010 acompañamos a hogares y empresas con soluciones tecnológicas confiables.</p>
+          <p className="mt-3 text-white/85 max-w-2xl mx-auto">Desde 2007 acompañamos a hogares y empresas con soluciones tecnológicas confiables.</p>
         </div>
       </section>
 
@@ -31,7 +31,7 @@ export default function Nosotros() {
           {[
             { i: Building2, n: "5,000+", l: "Empresas atendidas" },
             { i: Users, n: "50,000+", l: "Clientes felices" },
-            { i: Award, n: "15", l: "Años de experiencia" },
+            { i: Award, n: "19", l: "Años de experiencia" },
             { i: ShieldCheck, n: "100%", l: "Garantía oficial" },
           ].map((k) => (
             <div key={k.l}>

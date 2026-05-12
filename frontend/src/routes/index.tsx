@@ -2,11 +2,26 @@ import { Link } from "@/lib/router";
 import { useEffect, useState } from "react";
 import { categories } from "@/data/products";
 import heroImg from "@/assets/hero-banner.jpg";
+import brandHp from "@/assets/brands/hp.png";
+import brandLenovo from "@/assets/brands/lenovo.png";
+import brandDell from "@/assets/brands/dell.png";
+import brandHikvision from "@/assets/brands/hikvision.png";
+import brandDahua from "@/assets/brands/dahua.png";
+import brandEpson from "@/assets/brands/epson.png";
+import brandTplink from "@/assets/brands/tplink.png";
+import brandZkteco from "@/assets/brands/zkteco.png";
+import brandCisco from "@/assets/brands/cisco.png";
 import { useCart } from "@/context/CartContext";
 import type { Producto } from "@/types/product";
-import { ShieldCheck, Truck, Headphones, CreditCard, Wrench, Camera, Fingerprint, Cable, Cpu, ArrowRight, ShoppingCart } from "lucide-react";
+import { ShieldCheck, Truck, Headphones, CreditCard, Wrench, Camera, Fingerprint, Cable, Cpu, Wind, Tv, CircuitBoard, ArrowRight, ShoppingCart, ChevronLeft, ChevronRight } from "lucide-react";
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
+
+interface BannerHero {
+  id: string;
+  path: string;
+  orden: number;
+}
 
 function getImageUrl(producto: Producto): string {
   if (producto.imagenes && producto.imagenes.length > 0) return `${BACKEND}${producto.imagenes[0].path}`;
@@ -53,14 +68,17 @@ function FeaturedProductCard({ producto }: { producto: Producto }) {
 export default function Home() {
   const [featured, setFeatured] = useState<Producto[]>([]);
   const [offers, setOffers] = useState<Producto[]>([]);
+  const [heroBanners, setHeroBanners] = useState<BannerHero[]>([]);
+  const [heroIndex, setHeroIndex] = useState(0);
+  const [bannerPromo, setBannerPromo] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
 
     async function loadProducts() {
       try {
-      const res = await fetch(`${BACKEND}/api/productos?estado=ACTIVO&destacado=true`);
-      const data = await res.json();
+        const res = await fetch(`${BACKEND}/api/productos?estado=ACTIVO&destacado=true`);
+        const data = await res.json();
         if (active) setFeatured(data.productos || []);
       } catch {
         if (active) setFeatured([]);
@@ -79,131 +97,258 @@ export default function Home() {
     return () => { active = false; };
   }, []);
 
+  useEffect(() => {
+    let active = true;
+
+    async function loadBanners() {
+      try {
+        const res = await fetch(`${BACKEND}/api/banners-hero`);
+        const data = await res.json();
+        if (active) setHeroBanners(data.banners || []);
+      } catch {
+        if (active) setHeroBanners([]);
+      }
+    }
+
+    loadBanners();
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    fetch(`${BACKEND}/api/banner-promocion`)
+      .then((r) => r.json())
+      .then((d) => { if (d.banner) setBannerPromo(`${BACKEND}${d.banner.path}`); })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (heroBanners.length <= 1) return;
+    const timer = window.setInterval(() => {
+      setHeroIndex((idx) => (idx + 1) % heroBanners.length);
+    }, 5000);
+    return () => window.clearInterval(timer);
+  }, [heroBanners.length]);
+
+  useEffect(() => {
+    if (heroIndex >= heroBanners.length) setHeroIndex(0);
+  }, [heroBanners.length, heroIndex]);
+
+  const hasMultipleHeroBanners = heroBanners.length > 1;
+  const currentHeroBanner = heroBanners[heroIndex];
+  const heroImageSrc = currentHeroBanner ? `${BACKEND}${currentHeroBanner.path}` : heroImg;
+
+  function previousHeroBanner() {
+    if (!hasMultipleHeroBanners) return;
+    setHeroIndex((idx) => (idx === 0 ? heroBanners.length - 1 : idx - 1));
+  }
+
+  function nextHeroBanner() {
+    if (!hasMultipleHeroBanners) return;
+    setHeroIndex((idx) => (idx + 1) % heroBanners.length);
+  }
+
   return (
     <div>
       {/* HERO */}
       <section className="gradient-hero text-white relative overflow-hidden">
-        <div className="container-x grid md:grid-cols-2 gap-6 items-center py-10 md:py-16 relative">
-          <div>
-            <span className="inline-block bg-brand-red text-white text-xs font-bold px-3 py-1 rounded mb-4">OFERTAS DE TEMPORADA</span>
-            <h1 className="text-4xl md:text-6xl font-black leading-[1.05]">Tecnología<br /><span className="text-brand-yellow">para tu vida</span></h1>
-            <p className="mt-4 text-white/85 max-w-md">Laptops, PCs, cámaras de seguridad, biometría y soluciones empresariales. Hasta 30% de descuento + 12 cuotas sin intereses.</p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link to="/tienda" className="bg-brand-red hover:bg-brand-red-dark px-6 py-3 rounded font-bold flex items-center gap-2">Comprar ahora <ArrowRight className="h-4 w-4" /></Link>
-              <Link to="/servicios" className="bg-white/10 hover:bg-white/20 border border-white/30 px-6 py-3 rounded font-bold">Ver servicios</Link>
+        <div className="container-x py-8 md:py-14 relative">
+          {/* Mobile: stacked. Desktop: side by side */}
+          <div className="grid grid-cols-1 md:grid-cols-[0.95fr_1.05fr] gap-6 lg:gap-7 items-center">
+            <div className="text-center md:text-left">
+              <span className="inline-block bg-brand-red text-white text-xs font-bold px-3 py-1 rounded mb-3">OFERTAS DE TEMPORADA</span>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black leading-[1.05]">
+                Todo<br /><span className="text-brand-yellow">en un solo lugar</span>
+              </h1>
+              <p className="mt-3 text-white/85 max-w-md mx-auto md:mx-0 text-sm sm:text-base">
+                Laptops, PCs, cámaras de seguridad, biometría y soluciones empresariales. Hasta 30% de descuento + 12 cuotas sin intereses.
+              </p>
+              <div className="mt-5 flex flex-wrap justify-center md:justify-start gap-3">
+                <Link to="/tienda" className="bg-brand-red hover:bg-brand-red-dark px-5 py-2.5 rounded font-bold flex items-center gap-2 text-sm sm:text-base">
+                  Comprar ahora <ArrowRight className="h-4 w-4" />
+                </Link>
+                <Link to="/servicios" className="bg-white/10 hover:bg-white/20 border border-white/30 px-5 py-2.5 rounded font-bold text-sm sm:text-base">
+                  Ver servicios
+                </Link>
+              </div>
             </div>
-          </div>
-          <div className="relative">
-            <img src={heroImg} alt="Promociones tecnología" width={1600} height={640} className="rounded-lg shadow-card-hover" />
+
+            <div className="relative md:-mr-1 lg:-mr-2 mt-4 md:mt-0">
+              <div className="relative overflow-hidden rounded-lg shadow-card-hover bg-white/5 aspect-[16/8] md:aspect-[16/7.3] lg:min-h-[300px] xl:min-h-[360px]">
+                <img
+                  key={heroImageSrc}
+                  src={heroImageSrc}
+                  alt="Promociones tecnología"
+                  width={1600}
+                  height={640}
+                  className="h-full w-full object-cover transition-opacity duration-500"
+                />
+                {hasMultipleHeroBanners && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={previousHeroBanner}
+                      aria-label="Banner anterior"
+                      className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-black/35 hover:bg-black/55 text-white grid place-items-center transition-colors"
+                    >
+                      <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={nextHeroBanner}
+                      aria-label="Siguiente banner"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-black/35 hover:bg-black/55 text-white grid place-items-center transition-colors"
+                    >
+                      <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
+                    </button>
+                    <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-2">
+                      {heroBanners.map((banner, idx) => (
+                        <button
+                          key={banner.id}
+                          type="button"
+                          onClick={() => setHeroIndex(idx)}
+                          aria-label={`Ver banner ${idx + 1}`}
+                          className={`h-2 rounded-full transition-all ${idx === heroIndex ? "w-6 bg-white" : "w-2 bg-white/50 hover:bg-white/75"}`}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* TRUST BAR */}
       <section className="bg-white border-b">
-        <div className="container-x grid grid-cols-2 md:grid-cols-4 gap-4 py-6 text-sm">
+        <div className="container-x grid grid-cols-2 sm:grid-cols-4 gap-3 py-5 text-sm">
           {[
             { icon: Truck, t: "Envío nacional", s: "A todo Ecuador" },
             { icon: ShieldCheck, t: "Garantía oficial", s: "Productos originales" },
             { icon: CreditCard, t: "12 cuotas", s: "Sin intereses" },
             { icon: Headphones, t: "Soporte 24/7", s: "Servicio técnico" },
           ].map((b) => (
-            <div key={b.t} className="flex items-center gap-3">
-              <div className="h-11 w-11 rounded bg-secondary text-brand-blue grid place-items-center"><b.icon className="h-5 w-5" /></div>
-              <div><div className="font-bold">{b.t}</div><div className="text-xs text-muted-foreground">{b.s}</div></div>
+            <div key={b.t} className="flex items-center gap-2 sm:gap-3">
+              <div className="h-9 w-9 sm:h-11 sm:w-11 rounded bg-secondary text-brand-blue grid place-items-center shrink-0">
+                <b.icon className="h-4 w-4 sm:h-5 sm:w-5" />
+              </div>
+              <div>
+                <div className="font-bold text-xs sm:text-sm">{b.t}</div>
+                <div className="text-[11px] sm:text-xs text-muted-foreground">{b.s}</div>
+              </div>
             </div>
           ))}
         </div>
       </section>
+      {/* CERTIFICATIONS */}
+      <section className="bg-white border-y py-10">
+        <div className="container-x text-center">
+          <h3 className="font-bold text-brand-blue mb-6">Distribuidores autorizados</h3>
+          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-6">
+            {[
+              { name: "HP", src: brandHp },
+              { name: "Lenovo", src: brandLenovo },
+              { name: "Dell", src: brandDell },
+              { name: "Hikvision", src: brandHikvision },
+              { name: "Dahua", src: brandDahua },
+              { name: "Epson", src: brandEpson },
+              { name: "TP-Link", src: brandTplink },
+              { name: "ZKTeco", src: brandZkteco },
+              { name: "Cisco", src: brandCisco },
+            ].map((b) => (
+              <img key={b.name} src={b.src} alt={b.name} className="h-8 md:h-10 w-auto object-contain" />
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* FEATURED CATEGORIES */}
-      <section className="container-x py-10">
-        <div className="flex items-end justify-between mb-6">
+      <section className="container-x py-8 md:py-10">
+        <div className="flex items-end justify-between mb-4 md:mb-6">
           <div>
-            <h2 className="text-2xl md:text-3xl font-black text-brand-blue">Categorías</h2>
-            <p className="text-sm text-muted-foreground">Encuentra lo que necesitas</p>
+            <h2 className="text-xl md:text-3xl font-black text-brand-blue">Categorías</h2>
+            <p className="text-xs md:text-sm text-muted-foreground">Encuentra lo que necesitas</p>
           </div>
-          <Link to="/tienda" className="text-sm font-bold text-brand-red hover:underline">Ver todas →</Link>
+          <Link to="/tienda" className="text-xs md:text-sm font-bold text-brand-red hover:underline shrink-0 ml-2">Ver todas →</Link>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-8 gap-2 md:gap-3">
           {categories.map((c) => (
-            <Link key={c.slug} to="/tienda" className="bg-white border rounded-md p-3 text-center hover:shadow-card-hover hover:border-brand-red transition-all group">
-              <div className="aspect-square bg-secondary rounded mb-2 overflow-hidden">
+            <Link key={c.slug} to="/tienda" className="bg-white border rounded-md p-2 md:p-3 text-center hover:shadow-card-hover hover:border-brand-red transition-all group">
+              <div className="aspect-square bg-secondary rounded mb-1.5 overflow-hidden">
                 <img src={c.image} alt={c.name} loading="lazy" className="h-full w-full object-cover group-hover:scale-105 transition-transform" />
               </div>
-              <div className="text-xs font-semibold text-brand-blue">{c.name}</div>
+              <div className="text-[10px] sm:text-xs font-semibold text-brand-blue leading-tight">{c.name}</div>
             </Link>
           ))}
         </div>
       </section>
 
       {/* PROMO STRIP */}
-      <section className="gradient-promo text-white py-8">
-        <div className="container-x flex flex-col md:flex-row items-center justify-between gap-4">
-          <div>
-            <div className="text-xs font-bold tracking-wider opacity-80">PROMO EXCLUSIVA</div>
-            <div className="text-2xl md:text-3xl font-black">Hasta 30% OFF en Laptops + Mochila gratis</div>
-          </div>
-          <Link to="/tienda" className="bg-white text-brand-red px-6 py-3 rounded font-bold hover:bg-brand-yellow">Ver ofertas</Link>
-        </div>
-      </section>
+      {bannerPromo && (
+        <section>
+          <Link to="/promociones">
+            <img src={bannerPromo} alt="Promoción" className="w-full object-cover max-h-64 md:max-h-96" />
+          </Link>
+        </section>
+      )}
 
       {featured.length > 0 && (
-        <section className="container-x py-10">
-          <div className="flex items-end justify-between mb-6">
+        <section className="container-x py-8 md:py-10">
+          <div className="flex items-end justify-between mb-4 md:mb-6">
             <div>
-              <h2 className="text-2xl md:text-3xl font-black text-brand-blue">Productos destacados</h2>
-              <p className="text-sm text-muted-foreground">Seleccionados por nuestro equipo</p>
+              <h2 className="text-xl md:text-3xl font-black text-brand-blue">Productos destacados</h2>
+              <p className="text-xs md:text-sm text-muted-foreground">Seleccionados por nuestro equipo</p>
             </div>
-            <Link to="/tienda" className="text-sm font-bold text-brand-red hover:underline">Ver todos →</Link>
+            <Link to="/tienda" className="text-xs md:text-sm font-bold text-brand-red hover:underline shrink-0 ml-2">Ver todos →</Link>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
             {featured.map((p) => <FeaturedProductCard key={p.id} producto={p} />)}
           </div>
         </section>
       )}
 
       {/* OFFERS BANNER */}
-      <section className="container-x py-10">
-        <div className="grid md:grid-cols-2 gap-4">
-          <div className="bg-brand-blue text-white rounded-lg p-8 flex items-center justify-between overflow-hidden relative">
-            <div>
-              <div className="text-xs font-bold opacity-80">SEGURIDAD</div>
-              <h3 className="text-2xl font-black mt-1">Kits de cámaras CCTV</h3>
-              <p className="text-sm opacity-80 mt-1">Instalación incluida en Guayaquil</p>
-              <Link to="/tienda" className="inline-block mt-4 bg-brand-red px-5 py-2 rounded font-bold text-sm">Cotizar</Link>
-            </div>
+      <section className="container-x py-8 md:py-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="bg-brand-blue text-white rounded-lg p-6 md:p-8 overflow-hidden relative">
+            <div className="text-xs font-bold opacity-80">SEGURIDAD</div>
+            <h3 className="text-xl md:text-2xl font-black mt-1">Kits de cámaras CCTV</h3>
+            <p className="text-sm opacity-80 mt-1">Instalación incluida en Guayaquil</p>
+            <Link to="/tienda" className="inline-block mt-4 bg-brand-red px-5 py-2 rounded font-bold text-sm">Cotizar</Link>
           </div>
-          <div className="bg-brand-red text-white rounded-lg p-8 flex items-center justify-between overflow-hidden relative">
-            <div>
-              <div className="text-xs font-bold opacity-80">CORPORATIVO</div>
-              <h3 className="text-2xl font-black mt-1">Soluciones empresariales</h3>
-              <p className="text-sm opacity-80 mt-1">Redes, cableado y biometría</p>
-              <Link to="/proyectos" className="inline-block mt-4 bg-white text-brand-red px-5 py-2 rounded font-bold text-sm">Ver proyectos</Link>
-            </div>
+          <div className="bg-brand-red text-white rounded-lg p-6 md:p-8 overflow-hidden relative">
+            <div className="text-xs font-bold opacity-80">CORPORATIVO</div>
+            <h3 className="text-xl md:text-2xl font-black mt-1">Soluciones empresariales</h3>
+            <p className="text-sm opacity-80 mt-1">Redes, cableado y biometría</p>
+            <Link to="/proyectos" className="inline-block mt-4 bg-white text-brand-red px-5 py-2 rounded font-bold text-sm">Ver proyectos</Link>
           </div>
         </div>
       </section>
 
       {/* SERVICES */}
-      <section className="bg-secondary py-12">
+      <section className="bg-secondary py-10 md:py-12">
         <div className="container-x">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl md:text-3xl font-black text-brand-blue">Nuestros Servicios</h2>
-            <p className="text-sm text-muted-foreground">Soluciones integrales para tu hogar y empresa</p>
+          <div className="text-center mb-6 md:mb-8">
+            <h2 className="text-xl md:text-3xl font-black text-brand-blue">Nuestros Servicios</h2>
+            <p className="text-xs md:text-sm text-muted-foreground">Soluciones integrales para tu hogar y empresa</p>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
             {[
               { i: Wrench, t: "Reparación PC", s: "Diagnóstico gratuito" },
               { i: Camera, t: "CCTV", s: "Instalación llave en mano" },
               { i: Cpu, t: "Cercos eléctricos", s: "Perimetrales certificados" },
               { i: Fingerprint, t: "Biometría", s: "Control de acceso" },
               { i: Cable, t: "Cableado", s: "Estructurado certificado" },
+              { i: Wind, t: "Aires acondicionado", s: "Instalación y mantenimiento" },
+              { i: Tv, t: "Mantenimiento de TVs", s: "Todas las marcas" },
+              { i: CircuitBoard, t: "Microelectrónica", s: "Reparación de placas" },
             ].map((s) => (
-              <Link key={s.t} to="/servicios" className="bg-white rounded-md p-5 hover:shadow-card-hover transition-shadow text-center">
-                <div className="h-12 w-12 rounded bg-brand-blue text-white grid place-items-center mx-auto mb-3"><s.i className="h-6 w-6" /></div>
-                <div className="font-bold text-sm">{s.t}</div>
-                <div className="text-xs text-muted-foreground mt-1">{s.s}</div>
+              <Link key={s.t} to="/servicios" className="bg-white rounded-md p-4 md:p-5 hover:shadow-card-hover transition-shadow text-center">
+                <div className="h-10 w-10 md:h-12 md:w-12 rounded bg-brand-blue text-white grid place-items-center mx-auto mb-2 md:mb-3">
+                  <s.i className="h-5 w-5 md:h-6 md:w-6" />
+                </div>
+                <div className="font-bold text-xs md:text-sm">{s.t}</div>
+                <div className="text-[11px] md:text-xs text-muted-foreground mt-1">{s.s}</div>
               </Link>
             ))}
           </div>
@@ -211,25 +356,15 @@ export default function Home() {
       </section>
 
       {offers.length > 0 && (
-        <section className="container-x py-10">
-          <h2 className="text-2xl md:text-3xl font-black text-brand-blue mb-6">Ofertas relámpago</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <section className="container-x py-8 md:py-10">
+          <h2 className="text-xl md:text-3xl font-black text-brand-blue mb-4 md:mb-6">Ofertas relámpago</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
             {offers.map((p) => <FeaturedProductCard key={p.id} producto={p} />)}
           </div>
         </section>
       )}
 
-      {/* CERTIFICATIONS */}
-      <section className="bg-white border-y py-10">
-        <div className="container-x text-center">
-          <h3 className="font-bold text-brand-blue mb-6">Distribuidores autorizados</h3>
-          <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4 text-muted-foreground font-bold text-xl opacity-70">
-            {["HP", "Lenovo", "Dell", "Hikvision", "Dahua", "Epson", "TP-Link", "ZKTeco", "Cisco"].map((b) => (
-              <span key={b} className="hover:text-brand-blue">{b}</span>
-            ))}
-          </div>
-        </div>
-      </section>
+      
     </div>
   );
 }

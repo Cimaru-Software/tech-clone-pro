@@ -53,6 +53,50 @@ model ProductoImagen {
   createdAt  DateTime @default(now())
 }
 
+model BannerHero {
+  id        String   @id @default(cuid())
+  path      String
+  orden     Int      @default(0)
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("banners_hero")
+}
+
+model Noticia {
+  id        String   @id @default(cuid())
+  titulo    String
+  slug      String   @unique
+  portada   String
+  cuerpo    String   @db.Text
+  publicado Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("noticias")
+}
+
+model BannerPromocion {
+  id        String   @id @default(cuid())
+  path      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("banner_promocion")
+}
+
+model Certificado {
+  id        String   @id @default(cuid())
+  nombre    String
+  path      String
+  orden     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("certificados")
+}
+
 enum EstadoProducto {
   ACTIVO
   INACTIVO

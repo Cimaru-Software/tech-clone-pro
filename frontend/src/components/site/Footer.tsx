@@ -8,7 +8,7 @@ export function Footer() {
         <div className="col-span-2 md:col-span-1">
           <Link to="/" className="inline-flex mb-4" aria-label="LA CASA DEL COMPUTADOR">
             <img
-              src="/images/logo.png"
+              src="/images/logo_bw.png"
               alt="LA CASA DEL COMPUTADOR"
               className="h-14 w-auto object-contain"
             />

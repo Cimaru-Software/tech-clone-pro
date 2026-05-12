@@ -16,6 +16,8 @@ import MiCuentaPage from "@/routes/mi-cuenta";
 import MisPedidosPage from "@/routes/mi-cuenta/pedidos";
 import ProductoDetalle from "@/routes/producto/$id";
 import ProductRedirect from "@/routes/product/$id";
+import Noticias from "@/routes/noticias/index";
+import NoticiaDetalle from "@/routes/noticias/$slug";
 import "@/styles.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
@@ -37,6 +39,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route path="mi-cuenta/pedidos" element={<MisPedidosPage />} />
           <Route path="producto/:id" element={<ProductoDetalle />} />
           <Route path="product/:id" element={<ProductRedirect />} />
+          <Route path="noticias" element={<Noticias />} />
+          <Route path="noticias/:slug" element={<NoticiaDetalle />} />
           <Route path="mi-cuenta/" element={<Navigate to="/mi-cuenta" replace />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>

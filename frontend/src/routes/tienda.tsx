@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "@/lib/router";
 import { useEffect, useState, useMemo } from "react";
-import { ChevronRight, SlidersHorizontal, Search, ShoppingCart } from "lucide-react";
+import { ChevronRight, SlidersHorizontal, Search, ShoppingCart, X } from "lucide-react";
 import type { Producto, Categoria } from "@/types/product";
 import { useCart } from "@/context/CartContext";
 
@@ -67,6 +67,7 @@ export default function Tienda() {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -132,8 +133,63 @@ export default function Tienda() {
       </div>
 
       <div className="container-x py-6 grid lg:grid-cols-[260px_1fr] gap-6">
-        {/* SIDEBAR */}
-        <aside className="bg-white rounded-md p-4 h-fit lg:sticky lg:top-32 space-y-5">
+
+        {/* Mobile filter toggle */}
+        <div className="lg:hidden mb-0">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="flex items-center gap-2 bg-white border rounded-md px-4 py-2.5 text-sm font-semibold hover:border-brand-blue transition-colors"
+          >
+            <SlidersHorizontal className="h-4 w-4" /> Filtros
+          </button>
+        </div>
+
+        {/* Mobile sidebar overlay */}
+        {sidebarOpen && (
+          <div className="fixed inset-0 z-50 lg:hidden">
+            <div className="absolute inset-0 bg-black/50" onClick={() => setSidebarOpen(false)} />
+            <div className="absolute top-0 left-0 h-full w-[85vw] max-w-xs bg-white shadow-2xl overflow-y-auto">
+              <div className="flex items-center justify-between px-4 py-3 border-b sticky top-0 bg-white z-10">
+                <span className="font-bold text-brand-blue flex items-center gap-2"><SlidersHorizontal className="h-4 w-4" /> Filtros</span>
+                <button onClick={() => setSidebarOpen(false)} className="p-1.5 rounded-md hover:bg-secondary"><X className="h-5 w-5" /></button>
+              </div>
+              <div className="p-4 space-y-5">
+                <div>
+                  <h3 className="font-bold text-brand-blue mb-3 flex items-center gap-2"><SlidersHorizontal className="h-4 w-4" /> Categorías</h3>
+                  <ul className="space-y-1 text-sm">
+                    <li><button onClick={() => { setCat(null); setSidebarOpen(false); }} className={`w-full text-left px-2 py-1.5 rounded hover:bg-secondary ${!cat ? "text-brand-red font-bold" : ""}`}>Todas</button></li>
+                    {categorias.map((c) => (
+                      <li key={c.slug}><button onClick={() => { setCat(c.slug); setSidebarOpen(false); }} className={`w-full text-left px-2 py-1.5 rounded hover:bg-secondary ${cat === c.slug ? "text-brand-red font-bold" : ""}`}>{c.nombre}</button></li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="border-t pt-4">
+                  <h3 className="font-bold text-brand-blue mb-3">Precio máximo</h3>
+                  <input type="range" min={50} max={maxPrecioReal} step={50} value={maxPrice} onChange={(e) => setMaxPrice(Number(e.target.value))} className="w-full accent-brand-red" />
+                  <div className="text-sm font-semibold mt-1">Hasta ${maxPrice.toLocaleString()}</div>
+                </div>
+                {marcasDisponibles.length > 0 && (
+                  <div className="border-t pt-4">
+                    <h3 className="font-bold text-brand-blue mb-3">Marcas</h3>
+                    <ul className="space-y-1.5 text-sm">
+                      {marcasDisponibles.map((b) => (
+                        <li key={b}><label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={selectedBrands.includes(b)} onChange={() => toggleBrand(b)} className="accent-brand-red" />{b}</label></li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                <div className="bg-brand-blue text-white rounded p-4 text-sm">
+                  <div className="font-bold mb-1">¿Necesitas asesoría?</div>
+                  <p className="text-xs opacity-80 mb-3">Nuestros expertos te ayudan a elegir.</p>
+                  <a href="https://wa.me/593999999999" target="_blank" rel="noreferrer" className="block bg-whatsapp text-center py-2 rounded font-bold">WhatsApp</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* SIDEBAR – desktop */}
+        <aside className="hidden lg:block bg-white rounded-md p-4 h-fit lg:sticky lg:top-32 space-y-5">
           <div>
             <h3 className="font-bold text-brand-blue mb-3 flex items-center gap-2">
               <SlidersHorizontal className="h-4 w-4" /> Categorías
