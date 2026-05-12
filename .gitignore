@@ -1,6 +1,29 @@
+# Dependencies
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
 # Runtime uploads
 backend/public/images/comprobantes/
 backend/public/images/productos/
+backend/public/images/banners-hero/
+backend/public/images/noticias/
+backend/public/images/noticias-contenido/
+backend/public/images/certificados/
+backend/public/images/banner-promocion/
+
+# Next.js
+backend/.next/
+backend/out/
+
+# Build
+frontend/dist/
+frontend/build/
+
+# Env
+.env
+.env.local
+.env.production
 
 # Keep static/public brand assets trackable
 !backend/public/images/logo.png
