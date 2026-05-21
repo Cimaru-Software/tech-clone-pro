@@ -1,6 +1,5 @@
 import { Link } from "@/lib/router";
 import { useEffect, useState } from "react";
-import { categories } from "@/data/products";
 import heroImg from "@/assets/hero-banner.jpg";
 import brandHp from "@/assets/brands/hp.png";
 import brandLenovo from "@/assets/brands/lenovo.png";
@@ -65,12 +64,40 @@ function FeaturedProductCard({ producto }: { producto: Producto }) {
   );
 }
 
+const CATEGORIA_ICONS: Record<string, string> = {
+  "computadoras-laptops": "💻",
+  "impresoras-suministros": "🖨️",
+  "sillas-escritorios": "🪑",
+  "celulares-tablets-smartwatch": "📱",
+  "domotica": "🏠",
+  "audio-video": "🔊",
+  "seguridad-videovigilancia": "📷",
+  "energia-respaldo": "🔋",
+  "redes-conectividad": "🌐",
+  "hogar": "❄️",
+};
+
+interface CategoriaConImagen {
+  id: string;
+  nombre: string;
+  slug: string;
+  orden: number;
+}
+
 export default function Home() {
   const [featured, setFeatured] = useState<Producto[]>([]);
   const [offers, setOffers] = useState<Producto[]>([]);
   const [heroBanners, setHeroBanners] = useState<BannerHero[]>([]);
   const [heroIndex, setHeroIndex] = useState(0);
   const [bannerPromo, setBannerPromo] = useState<string | null>(null);
+  const [categorias, setCategorias] = useState<CategoriaConImagen[]>([]);
+
+  useEffect(() => {
+    fetch(`${BACKEND}/api/categorias`)
+      .then((r) => r.json())
+      .then((d) => setCategorias(d.categorias || []))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -259,27 +286,6 @@ export default function Home() {
               <img key={b.name} src={b.src} alt={b.name} className="h-8 md:h-10 w-auto object-contain" />
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* FEATURED CATEGORIES */}
-      <section className="container-x py-8 md:py-10">
-        <div className="flex items-end justify-between mb-4 md:mb-6">
-          <div>
-            <h2 className="text-xl md:text-3xl font-black text-brand-blue">Categorías</h2>
-            <p className="text-xs md:text-sm text-muted-foreground">Encuentra lo que necesitas</p>
-          </div>
-          <Link to="/tienda" className="text-xs md:text-sm font-bold text-brand-red hover:underline shrink-0 ml-2">Ver todas →</Link>
-        </div>
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-8 gap-2 md:gap-3">
-          {categories.map((c) => (
-            <Link key={c.slug} to="/tienda" className="bg-white border rounded-md p-2 md:p-3 text-center hover:shadow-card-hover hover:border-brand-red transition-all group">
-              <div className="aspect-square bg-secondary rounded mb-1.5 overflow-hidden">
-                <img src={c.image} alt={c.name} loading="lazy" className="h-full w-full object-cover group-hover:scale-105 transition-transform" />
-              </div>
-              <div className="text-[10px] sm:text-xs font-semibold text-brand-blue leading-tight">{c.name}</div>
-            </Link>
-          ))}
         </div>
       </section>
 

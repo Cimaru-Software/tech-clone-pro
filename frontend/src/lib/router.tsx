@@ -3,6 +3,7 @@ import {
   NavLink,
   useNavigate as useReactNavigate,
   useParams,
+  useSearchParams,
   type LinkProps as RouterLinkProps,
 } from "react-router-dom";
 
@@ -83,4 +84,4 @@ export function useNavigate() {
   };
 }
 
-export { useParams };
+export { useParams, useSearchParams };

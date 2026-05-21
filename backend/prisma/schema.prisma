@@ -18,30 +18,50 @@ model Admin {
 }
 
 model Categoria {
-  id        String     @id @default(cuid())
-  nombre    String     @unique
-  slug      String     @unique
-  productos Producto[]
-  createdAt DateTime   @default(now())
+  id            String         @id @default(cuid())
+  nombre        String         @unique
+  slug          String         @unique
+  orden         Int            @default(0)
+  subcategorias Subcategoria[]
+  productos     Producto[]
+  createdAt     DateTime       @default(now())
+}
+
+model Subcategoria {
+  id          String     @id @default(cuid())
+  nombre      String
+  slug        String     @unique
+  orden       Int        @default(0)
+  categoriaId String
+  categoria   Categoria  @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
+  productos   Producto[]
+  createdAt   DateTime   @default(now())
 }
 
 model Producto {
-  id          String           @id @default(cuid())
-  nombre      String
-  marca       String
-  categoriaId String
-  categoria   Categoria        @relation(fields: [categoriaId], references: [id])
-  descripcion String           @db.Text
-  precio      Decimal          @db.Decimal(10, 2)
-  descuento   Int              @default(0)
-  destacado   Boolean          @default(false)
-  imagenes    ProductoImagen[]
-  estado      EstadoProducto   @default(ACTIVO)
-  stock       Int              @default(0)
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  itemsPedido ItemPedido[]
-  itemsCompra ItemCompra[]
+  id             String           @id @default(cuid())
+  nombre         String
+  marca          String
+  categoriaId    String
+  categoria      Categoria        @relation(fields: [categoriaId], references: [id])
+  subcategoriaId String?
+  subcategoria   Subcategoria?    @relation(fields: [subcategoriaId], references: [id])
+  descripcion    String           @db.Text
+  precio         Decimal          @db.Decimal(10, 2)
+  descuento      Int              @default(0)
+  destacado      Boolean          @default(false)
+  imagenes         ProductoImagen[]
+  estado           EstadoProducto   @default(ACTIVO)
+  stock            Int              @default(0)
+  // Contífico
+  contificoId      String?          @unique
+  contificoCode    String?
+  ivaContificoPorc String?          @default("12")
+  lastSyncedAt     DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  itemsPedido      ItemPedido[]
+  itemsCompra      ItemCompra[]
 }
 
 model ProductoImagen {
@@ -167,10 +187,11 @@ model Compra {
   provincia       String       @default("")
   notas           String?      @db.Text
   comprobantePath String
-  motivoRechazo   String?      @db.Text
+  motivoRechazo   String?          @db.Text
   items           ItemCompra[]
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  facturaContifico ContificoFactura?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 }
 
 model ItemCompra {
@@ -188,4 +209,28 @@ enum EstadoCompra {
   PENDIENTE
   APROBADO
   RECHAZADO
+}
+
+model ContificoSyncLog {
+  id            String   @id @default(cuid())
+  tipo          String   // "productos" | "stock" | "factura"
+  estado        String   // "ok" | "error"
+  mensaje       String?  @db.Text
+  detalle       String?  @db.Text
+  compraId      String?
+  createdAt     DateTime @default(now())
+
+  @@map("contifico_sync_logs")
+}
+
+model ContificoFactura {
+  id                String   @id @default(cuid())
+  compraId          String   @unique
+  compra            Compra   @relation(fields: [compraId], references: [id])
+  contificoDocId    String
+  contificoSecuencial String?
+  estado            String   @default("emitida")
+  createdAt         DateTime @default(now())
+
+  @@map("contifico_facturas")
 }
