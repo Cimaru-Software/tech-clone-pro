@@ -139,7 +139,7 @@ export function Header() {
             <MapPin className="h-4 w-4 text-brand-yellow" />
             <div className="leading-tight">
               <div className="opacity-80">Envío a</div>
-              <div className="font-semibold">Guayaquil</div>
+              <div className="font-semibold">todo Ecuador</div>
             </div>
           </div>
 

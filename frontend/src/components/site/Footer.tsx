@@ -1,5 +1,5 @@
 import { Link } from "@/lib/router";
-import { Facebook, Instagram, Youtube, Mail, Phone, MapPin } from "lucide-react";
+import { Facebook, Instagram, Youtube, Phone, MapPin } from "lucide-react";
 
 export function Footer() {
   return (
@@ -44,10 +44,31 @@ export function Footer() {
 
         <div>
           <h4 className="font-bold mb-3 text-sm">Contacto</h4>
-          <ul className="space-y-2 text-sm text-white/70">
-            <li className="flex items-start gap-2"><MapPin className="h-4 w-4 mt-0.5 shrink-0 text-brand-yellow" /> Av. 9 de Octubre 1234, Guayaquil</li>
-            <li className="flex items-center gap-2"><Phone className="h-4 w-4 text-brand-yellow" /> (04) 222-3333</li>
-            <li className="flex items-center gap-2"><Mail className="h-4 w-4 text-brand-yellow" /> ventas@lacasadelcomputador.ec</li>
+          <ul className="space-y-4 text-sm text-white/70">
+            <li className="flex items-start gap-2">
+              <MapPin className="h-4 w-4 mt-0.5 shrink-0 text-brand-yellow" />
+              <span>
+                <span className="font-bold text-white">Sucursal Principal:</span>{" "}
+                La Libertad, Av. 9 de Octubre Ignacio Guerra Esq (Edificio Ruiz,
+                Cerca de Almacenes Tía y Academia Naval “Capitán Leonardo Abada
+                Astrudillo”)
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <MapPin className="h-4 w-4 mt-0.5 shrink-0 text-brand-yellow" />
+              <span>
+                <span className="font-bold text-white">Sucursal PALAU:</span>{" "}
+                La Libertad, diagonal al edificio de la Judicatura en las
+                antiguas oficinas de la “Agencia Palau”
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <Phone className="h-4 w-4 mt-0.5 shrink-0 text-brand-yellow" />
+              <span>
+                <span className="font-bold text-white">Números telefónicos.-</span>{" "}
+                0989955400 / 0968716845
+              </span>
+            </li>
           </ul>
         </div>
       </div>

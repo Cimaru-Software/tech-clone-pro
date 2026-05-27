@@ -187,7 +187,7 @@ export default function Home() {
                 Todo<br /><span className="text-brand-yellow">en un solo lugar</span>
               </h1>
               <p className="mt-3 text-white/85 max-w-md mx-auto md:mx-0 text-sm sm:text-base">
-                Laptops, PCs, cámaras de seguridad, biometría y soluciones empresariales. Hasta 30% de descuento + 12 cuotas sin intereses.
+                Laptops, PCs, cámaras de seguridad, biometría y soluciones empresariales. Hasta 30% de descuento + 12 cuotas.
               </p>
               <div className="mt-5 flex flex-wrap justify-center md:justify-start gap-3">
                 <Link to="/tienda" className="bg-brand-red hover:bg-brand-red-dark px-5 py-2.5 rounded font-bold flex items-center gap-2 text-sm sm:text-base">
@@ -252,7 +252,7 @@ export default function Home() {
           {[
             { icon: Truck, t: "Envío nacional", s: "A todo Ecuador" },
             { icon: ShieldCheck, t: "Garantía oficial", s: "Productos originales" },
-            { icon: CreditCard, t: "12 cuotas", s: "Sin intereses" },
+            { icon: CreditCard, t: "12 cuotas" },
             { icon: Headphones, t: "Soporte 24/7", s: "Servicio técnico" },
           ].map((b) => (
             <div key={b.t} className="flex items-center gap-2 sm:gap-3">

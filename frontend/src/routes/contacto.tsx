@@ -10,8 +10,8 @@ const locations = [
   {
     name: "Sucursal",
     address: "La Libertad, diagonal al Edificio de la Judicatura, en las antiguas oficinas de la Agencia Palau.",
-    schedule: "Lunes-Viernes 8:30-18:30\nSábados",
-    map: "https://maps.google.com/maps?q=La%20Libertad%20Edificio%20de%20la%20Judicatura%20Agencia%20Palau&t=&z=17&ie=UTF8&iwloc=&output=embed",
+    schedule: "Lunes-Viernes 8:30-18:30\nSábados 9:00-15:00",
+    map: "https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d15947.241950331194!2d-80.909712!3d-2.2249241!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x902e0f1aa5ce8a1b%3A0x1406419eee7cc318!2sLa%20Casa%20del%20Computador%202!5e0!3m2!1ses!2sec!4v1779896689936!5m2!1ses!2sec",
   },
 ];
 

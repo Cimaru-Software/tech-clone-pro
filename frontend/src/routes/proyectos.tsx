@@ -40,7 +40,7 @@ export default function Proyectos() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
             { n: "500+", l: "Proyectos ejecutados" },
-            { n: "15", l: "Años de experiencia" },
+            { n: "19", l: "Años de experiencia" },
             { n: "98%", l: "Clientes satisfechos" },
             { n: "24/7", l: "Soporte garantizado" },
           ].map((k) => (
