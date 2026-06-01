@@ -53,27 +53,62 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Token inválido" }, { status: 401 });
   }
 
-  try {
-    const formData = await request.formData();
-    const metodoPago = String(formData.get("metodoPago") || "");
-    const direccion = String(formData.get("direccion") || "").trim();
-    const ciudad = String(formData.get("ciudad") || "").trim();
-    const provincia = String(formData.get("provincia") || "").trim();
-    const notas = String(formData.get("notas") || "").trim();
-    const items = itemSchema.array().parse(JSON.parse(String(formData.get("items") || "[]")));
-    const comprobante = formData.get("comprobante");
+  const contentType = request.headers.get("content-type") || "";
+  const isJson = contentType.includes("application/json");
 
-    if (metodoPago !== "transfer") {
-      return NextResponse.json({ error: "El pago con tarjeta aún no está disponible" }, { status: 400 });
+  try {
+    let metodoPago: string;
+    let direccion: string;
+    let ciudad: string;
+    let provincia: string;
+    let notas: string;
+    let items: z.infer<typeof itemSchema>[];
+    let comprobante: File | null = null;
+    let pluxTransaccion: string | null = null;
+    let pluxToken: string | null = null;
+
+    if (isJson) {
+      const body = await request.json();
+      metodoPago = String(body.metodoPago || "");
+      direccion = String(body.direccion || "").trim();
+      ciudad = String(body.ciudad || "").trim();
+      provincia = String(body.provincia || "").trim();
+      notas = String(body.notas || "").trim();
+      items = itemSchema.array().parse(body.items);
+      pluxTransaccion = body.pluxTransaccion ? String(body.pluxTransaccion) : null;
+      pluxToken = body.pluxToken ? String(body.pluxToken) : null;
+    } else {
+      const formData = await request.formData();
+      metodoPago = String(formData.get("metodoPago") || "");
+      direccion = String(formData.get("direccion") || "").trim();
+      ciudad = String(formData.get("ciudad") || "").trim();
+      provincia = String(formData.get("provincia") || "").trim();
+      notas = String(formData.get("notas") || "").trim();
+      items = itemSchema.array().parse(JSON.parse(String(formData.get("items") || "[]")));
+      const comprobanteField = formData.get("comprobante");
+      comprobante = comprobanteField instanceof File ? comprobanteField : null;
+    }
+
+    if (!["transfer", "card"].includes(metodoPago)) {
+      return NextResponse.json({ error: "Método de pago inválido" }, { status: 400 });
     }
     if (!direccion || !ciudad || !provincia || !notas) {
       return NextResponse.json({ error: "Completa los datos de envío" }, { status: 400 });
     }
-    if (!(comprobante instanceof File) || comprobante.size === 0) {
-      return NextResponse.json({ error: "Debes cargar el comprobante de pago" }, { status: 400 });
+
+    if (metodoPago === "transfer") {
+      if (!comprobante || comprobante.size === 0) {
+        return NextResponse.json({ error: "Debes cargar el comprobante de pago" }, { status: 400 });
+      }
+      if (!comprobante.type.startsWith("image/")) {
+        return NextResponse.json({ error: "El comprobante debe ser una imagen" }, { status: 400 });
+      }
     }
-    if (!comprobante.type.startsWith("image/")) {
-      return NextResponse.json({ error: "El comprobante debe ser una imagen" }, { status: 400 });
+
+    if (metodoPago === "card") {
+      if (!pluxTransaccion || !pluxToken) {
+        return NextResponse.json({ error: "Datos de transacción incompletos" }, { status: 400 });
+      }
     }
 
     const productos = await prisma.producto.findMany({
@@ -91,12 +126,16 @@ export async function POST(request: NextRequest) {
       return { ...item, precio };
     });
 
-    const dir = join(process.cwd(), "public", "images", "comprobantes");
-    await mkdir(dir, { recursive: true });
-    const ext = comprobante.name.split(".").pop() || "jpg";
-    const filename = `${uuidv4()}.${ext}`;
-    await writeFile(join(dir, filename), Buffer.from(await comprobante.arrayBuffer()));
-    const comprobantePath = `/images/comprobantes/${filename}`;
+    let comprobantePath: string | null = null;
+    if (metodoPago === "transfer" && comprobante) {
+      const dir = join(process.cwd(), "public", "images", "comprobantes");
+      await mkdir(dir, { recursive: true });
+      const ext = comprobante.name.split(".").pop() || "jpg";
+      const filename = `${uuidv4()}.${ext}`;
+      await writeFile(join(dir, filename), Buffer.from(await comprobante.arrayBuffer()));
+      comprobantePath = `/images/comprobantes/${filename}`;
+    }
+
     const subtotal = itemsConPrecio.reduce((acc, item) => acc + item.precio * item.cantidad, 0);
     const total = getTotal(subtotal);
 
@@ -109,7 +148,9 @@ export async function POST(request: NextRequest) {
         ciudad,
         provincia,
         notas,
-        comprobantePath,
+        ...(comprobantePath ? { comprobantePath } : {}),
+        ...(pluxTransaccion ? { pluxTransaccion } : {}),
+        ...(pluxToken ? { pluxToken } : {}),
         items: {
           create: itemsConPrecio.map((item) => ({
             productoId: item.productoId,
@@ -129,7 +170,7 @@ export async function POST(request: NextRequest) {
         compraId: compra.id,
         cliente: compra.cliente,
         total: compra.total,
-        comprobantePath,
+        comprobantePath: comprobantePath ?? undefined,
       })),
       sendMailSafe(purchasePendingCustomerEmail({
         compraId: compra.id,

@@ -14,7 +14,7 @@ interface Compra {
   ciudad: string;
   provincia: string;
   notas?: string;
-  comprobantePath: string;
+  comprobantePath?: string | null;
   motivoRechazo?: string;
   createdAt: string;
   cliente: { nombre: string; apellido: string; email: string };
@@ -142,7 +142,10 @@ export default function ComprobantesPage() {
                 {isExpanded && (
                   <div style={{ borderTop: "1px solid #f3f4f6", padding: "1rem 1.5rem", background: "#fafafa" }}>
                     <div style={{ display: "grid", gridTemplateColumns: "220px 1fr", gap: "1rem", alignItems: "start" }}>
-                      <img src={c.comprobantePath} alt="Comprobante" style={{ width: "220px", maxHeight: "280px", objectFit: "contain", background: "white", border: "1px solid #e5e7eb", borderRadius: "8px" }} />
+                      {c.comprobantePath
+                        ? <img src={c.comprobantePath} alt="Comprobante" style={{ width: "220px", maxHeight: "280px", objectFit: "contain", background: "white", border: "1px solid #e5e7eb", borderRadius: "8px" }} />
+                        : <div style={{ width: "220px", height: "80px", display: "flex", alignItems: "center", justifyContent: "center", background: "#f3f4f6", borderRadius: "8px", fontSize: "0.8rem", color: "#6b7280" }}>Pago con tarjeta</div>
+                      }
                       <div>
                         <div style={{ fontSize: "0.875rem", marginBottom: "0.75rem" }}>
                           <div><span style={{ color: "#9ca3af" }}>Dirección: </span>{c.direccion}, {c.ciudad}, {c.provincia}</div>

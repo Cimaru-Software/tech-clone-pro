@@ -111,6 +111,15 @@
   h1, h2, h3, h4 { letter-spacing: -0.01em; }
 }
 
+/* Plux modal — must render above everything */
+#ButtonPaybox,
+.paybox_modal,
+.paybox_modal__bg,
+#paybox_modal,
+#iframePaybox {
+  z-index: 999999 !important;
+}
+
 @layer utilities {
   .container-x { max-width: 1280px; margin-inline: auto; padding-inline: 1rem; }
   @media (min-width: 1024px) { .container-x { padding-inline: 1.5rem; } }

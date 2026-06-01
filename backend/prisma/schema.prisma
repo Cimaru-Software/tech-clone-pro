@@ -186,8 +186,10 @@ model Compra {
   ciudad          String
   provincia       String       @default("")
   notas           String?      @db.Text
-  comprobantePath String
-  motivoRechazo   String?          @db.Text
+  comprobantePath  String?
+  pluxTransaccion  String?
+  pluxToken        String?
+  motivoRechazo    String?          @db.Text
   items           ItemCompra[]
   facturaContifico ContificoFactura?
   createdAt       DateTime         @default(now())

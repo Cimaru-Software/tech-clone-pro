@@ -169,7 +169,7 @@ export function purchasePendingAdminEmail(input: {
   compraId: string;
   cliente: Customer;
   total: unknown;
-  comprobantePath: string;
+  comprobantePath?: string;
 }) {
   return {
     to: process.env.MAIL_RECIPIENT || "",

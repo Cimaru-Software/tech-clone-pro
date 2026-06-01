@@ -1,34 +1,26 @@
-import { Link, useNavigate } from "@/lib/router";
+import { Link } from "@/lib/router";
 import { useEffect, useState } from "react";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { CheckCircle2, ChevronRight, Lock, Truck, CreditCard, Upload } from "lucide-react";
 
+declare global {
+  interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    __pluxCallback?: (response: any) => void;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    data?: any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    jQuery?: any;
+  }
+}
+
 const ECUADOR_PROVINCES = [
-  "Azuay",
-  "Bolívar",
-  "Cañar",
-  "Carchi",
-  "Chimborazo",
-  "Cotopaxi",
-  "El Oro",
-  "Esmeraldas",
-  "Galápagos",
-  "Guayas",
-  "Imbabura",
-  "Loja",
-  "Los Ríos",
-  "Manabí",
-  "Morona Santiago",
-  "Napo",
-  "Orellana",
-  "Pastaza",
-  "Pichincha",
-  "Santa Elena",
-  "Santo Domingo de los Tsáchilas",
-  "Sucumbíos",
-  "Tungurahua",
-  "Zamora Chinchipe",
+  "Azuay", "Bolívar", "Cañar", "Carchi", "Chimborazo", "Cotopaxi",
+  "El Oro", "Esmeraldas", "Galápagos", "Guayas", "Imbabura", "Loja",
+  "Los Ríos", "Manabí", "Morona Santiago", "Napo", "Orellana", "Pastaza",
+  "Pichincha", "Santa Elena", "Santo Domingo de los Tsáchilas",
+  "Sucumbíos", "Tungurahua", "Zamora Chinchipe",
 ];
 
 export default function Checkout() {
@@ -36,7 +28,6 @@ export default function Checkout() {
   const { cliente, isAuthenticated, isLoading } = useAuth();
   const [step, setStep] = useState(1);
   const [purchaseId, setPurchaseId] = useState<string | null>(null);
-  const navigate = useNavigate();
   const [shipping_form, setShippingForm] = useState({ direccion: "", ciudad: "", provincia: "", notas: "" });
   const [metodoPago, setMetodoPago] = useState("transfer");
   const [comprobante, setComprobante] = useState<File | null>(null);
@@ -57,37 +48,65 @@ export default function Checkout() {
     }));
   }, [cliente]);
 
+
+  // __pluxCallback se redefine en cada render para capturar closures actualizados
+  useEffect(() => {
+    window.__pluxCallback = async (response) => {
+      if (response?.status === "succeeded" || response?.estado === "succeeded") {
+        setIsSubmitting(true);
+        setError("");
+        try {
+          const res = await fetch(`${backendUrl}/api/compras`, {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              metodoPago: "card",
+              direccion: shipping_form.direccion.trim(),
+              ciudad: shipping_form.ciudad.trim(),
+              provincia: shipping_form.provincia.trim(),
+              notas: shipping_form.notas.trim(),
+              total,
+              items: items.map(i => ({ productoId: i.id, cantidad: i.qty, precio: itemPrice(i) })),
+              pluxTransaccion: response.id_transaccion || response.transaccion || "",
+              pluxToken: response.token || "",
+              pluxEstado: response.estado || response.status || "",
+            }),
+          });
+          const result = await res.json();
+          if (!res.ok) throw new Error(result.error || "No se pudo registrar la compra");
+          setPurchaseId(result.compra.id);
+          setStep(4);
+          clear();
+        } catch (err) {
+          setError(err instanceof Error ? err.message : "No se pudo registrar la compra");
+        } finally {
+          setIsSubmitting(false);
+        }
+      } else {
+        setError("El pago no pudo completarse. Intenta de nuevo.");
+      }
+    };
+  });
+
   const itemName = (item: typeof items[number] & { name?: string }) => item.nombre || item.name || "Producto";
   const itemImage = (item: typeof items[number] & { image?: string }) => item.imagen || item.image || "/placeholder-product.png";
   const itemPrice = (item: typeof items[number] & { price?: number }) => Number(item.precio ?? item.price ?? 0);
   const itemOriginalPrice = (item: typeof items[number] & { oldPrice?: number }) => Number(item.precioOriginal ?? item.oldPrice ?? itemPrice(item));
 
-  const finish = async () => {
-    setError("");
-    if (metodoPago === "card") {
-      setError("El pago con tarjeta de crédito aún no está disponible.");
-      return;
-    }
-    if (!shipping_form.direccion.trim() || !shipping_form.ciudad.trim() || !shipping_form.provincia.trim() || !shipping_form.notas.trim()) {
-      setError("Completa todos los datos de envío.");
-      return;
-    }
-    if (!comprobante) {
-      setError("Debes cargar una imagen del comprobante de transferencia.");
-      return;
-    }
-
+  const submitTransferOrder = async (comprobanteFile: File) => {
     setIsSubmitting(true);
+    setError("");
     try {
       const formData = new FormData();
-      formData.append("metodoPago", metodoPago);
+      formData.append("metodoPago", "transfer");
       formData.append("direccion", shipping_form.direccion.trim());
       formData.append("ciudad", shipping_form.ciudad.trim());
       formData.append("provincia", shipping_form.provincia.trim());
       formData.append("notas", shipping_form.notas.trim());
       formData.append("total", String(total));
       formData.append("items", JSON.stringify(items.map(i => ({ productoId: i.id, cantidad: i.qty, precio: itemPrice(i) }))));
-      formData.append("comprobante", comprobante);
+      formData.append("comprobante", comprobanteFile);
 
       const res = await fetch(`${backendUrl}/api/compras`, {
         method: "POST",
@@ -103,6 +122,55 @@ export default function Checkout() {
       setError(err instanceof Error ? err.message : "No se pudo registrar la compra");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const triggerPlux = () => {
+    setError("");
+
+    const $ = window.jQuery;
+    if (!$) {
+      setError("Error al cargar la pasarela de pago. Recarga la página.");
+      return;
+    }
+
+    // Actualizar window.data con los valores del pedido actual antes de abrir el modal.
+    // Plux lee window.data en tiempo de ejecución cuando el usuario confirma el pago.
+    if (window.data) {
+      window.data.PayboxSendmail    = cliente?.email || "";
+      window.data.PayboxSendname    = `${cliente?.nombre || ""} ${cliente?.apellido || ""}`.trim();
+      window.data.PayboxBase0       = "0.00";
+      window.data.PayboxBase12      = total.toFixed(2);
+      window.data.PayboxDescription = `Compra - ${items.length} producto(s)`;
+      window.data.PayboxDirection   = shipping_form.direccion.trim();
+      window.data.PayBoxClientPhone = cliente?.telefono || "0999999999";
+      window.data.PayBoxClientIdentification = "";
+    }
+
+    // Plux inyecta el botón #pay dentro de #ButtonPaybox durante window.load.
+    // Disparar click con jQuery (no con .click() nativo) porque Plux usa jQuery.on().
+    const btn = $("#pay");
+    if (btn.length) {
+      btn.trigger("click");
+    } else {
+      setError("La pasarela de pago no está lista. Recarga la página e inténtalo de nuevo.");
+    }
+  };
+
+  const finish = () => {
+    setError("");
+    if (!shipping_form.direccion.trim() || !shipping_form.ciudad.trim() || !shipping_form.provincia.trim() || !shipping_form.notas.trim()) {
+      setError("Completa todos los datos de envío.");
+      return;
+    }
+    if (metodoPago === "transfer") {
+      if (!comprobante) {
+        setError("Debes cargar una imagen del comprobante de transferencia.");
+        return;
+      }
+      submitTransferOrder(comprobante);
+    } else {
+      triggerPlux();
     }
   };
 
@@ -165,7 +233,7 @@ export default function Checkout() {
             <CheckCircle2 className="h-20 w-20 text-success mx-auto" />
             <h1 className="text-3xl font-black text-brand-blue mt-4">¡Compra registrada!</h1>
             <p className="text-muted-foreground mt-2">Tu compra <span className="font-bold text-foreground">#{purchaseId?.slice(-8)}</span> quedó pendiente de validación.</p>
-            <p className="text-sm text-muted-foreground mt-1">Cuando el comprobante sea aprobado se creará tu pedido.</p>
+            <p className="text-sm text-muted-foreground mt-1">Cuando el pago sea confirmado se procesará tu pedido.</p>
             <div className="grid sm:grid-cols-2 gap-3 mt-6">
               <Link to="/tienda" className="bg-brand-red hover:bg-brand-red-dark text-white py-3 rounded font-bold">Seguir comprando</Link>
               <Link to="/mi-cuenta/pedidos" className="bg-brand-blue text-white py-3 rounded font-bold">Ver mis pedidos</Link>
@@ -196,6 +264,7 @@ export default function Checkout() {
                   </div>
                 </>
               )}
+
               {step === 2 && (
                 <>
                   <h2 className="text-xl font-black text-brand-blue mb-4 flex items-center gap-2"><Truck className="h-5 w-5" /> 2. Datos de envío</h2>
@@ -212,16 +281,17 @@ export default function Checkout() {
                   </div>
                 </>
               )}
+
               {step === 3 && (
                 <>
                   <h2 className="text-xl font-black text-brand-blue mb-4 flex items-center gap-2"><CreditCard className="h-5 w-5" /> 3. Método de pago</h2>
                   <div className="space-y-3">
                     {[
-                      { v: "transfer", t: "Transferencia bancaria", d: "Carga el comprobante para validar tu compra", disabled: false },
-                      { v: "card", t: "Tarjeta de crédito", d: "Aún no está disponible", disabled: false },
+                      { v: "transfer", t: "Transferencia bancaria", d: "Carga el comprobante para validar tu compra" },
+                      { v: "card", t: "Tarjeta de crédito / débito", d: "Visa, Mastercard, American Express, Diners, Discover" },
                     ].map((m) => (
-                      <label key={m.v} className={`flex items-start gap-3 border rounded p-3 has-[:checked]:border-brand-red has-[:checked]:bg-secondary ${m.disabled ? "opacity-55 cursor-not-allowed" : "cursor-pointer hover:border-brand-red"}`}>
-                        <input type="radio" name="pay" disabled={m.disabled} checked={metodoPago === m.v} onChange={() => setMetodoPago(m.v)} className="mt-1 accent-brand-red" />
+                      <label key={m.v} className="flex items-start gap-3 border rounded p-3 has-[:checked]:border-brand-red has-[:checked]:bg-secondary cursor-pointer hover:border-brand-red">
+                        <input type="radio" name="pay" checked={metodoPago === m.v} onChange={() => setMetodoPago(m.v)} className="mt-1 accent-brand-red" />
                         <div>
                           <div className="font-bold text-sm">{m.t}</div>
                           <div className="text-xs text-muted-foreground">{m.d}</div>
@@ -229,6 +299,7 @@ export default function Checkout() {
                       </label>
                     ))}
                   </div>
+
                   {metodoPago === "transfer" && (
                     <div className="mt-4 space-y-3">
                       <div className="border rounded p-4 bg-secondary/60 text-sm">
@@ -240,7 +311,6 @@ export default function Checkout() {
                           <div><span className="text-muted-foreground">CI: </span><span className="font-semibold">1722212717</span></div>
                         </div>
                       </div>
-
                       <div className="border-2 border-dashed border-brand-blue/25 rounded-lg bg-secondary/60 p-5">
                         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                           <div className="h-12 w-12 rounded-full bg-brand-blue/10 text-brand-blue grid place-items-center shrink-0">
@@ -263,19 +333,37 @@ export default function Checkout() {
                       </div>
                     </div>
                   )}
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground mt-4"><Lock className="h-3 w-3" /> Pago 100% seguro y encriptado</div>
+
+                  {metodoPago === "card" && (
+                    <div className="mt-4 border rounded p-4 bg-secondary/60 text-sm flex items-center gap-3">
+                      <CreditCard className="h-5 w-5 text-brand-blue shrink-0" />
+                      <p className="text-muted-foreground">
+                        Al hacer click en <strong>Pagar con tarjeta</strong> se abrirá la pasarela segura de Plux para ingresar los datos de tu tarjeta.
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground mt-4">
+                    <Lock className="h-3 w-3" /> Pago 100% seguro y encriptado
+                  </div>
                 </>
               )}
 
               <div className="flex justify-between mt-6">
-                {step > 1 ? <button onClick={() => setStep(step - 1)} className="text-sm font-semibold text-muted-foreground hover:text-foreground">← Atrás</button> : <span />}
+                {step > 1 ? (
+                  <button onClick={() => setStep(step - 1)} className="text-sm font-semibold text-muted-foreground hover:text-foreground">← Atrás</button>
+                ) : <span />}
                 {error && <div className="text-sm font-semibold text-brand-red px-3 text-right">{error}</div>}
                 <button
                   onClick={() => step < 3 ? goNext() : finish()}
                   disabled={isSubmitting}
                   className="bg-brand-red hover:bg-brand-red-dark disabled:opacity-60 text-white font-bold px-6 py-2.5 rounded"
                 >
-                  {isSubmitting ? "Procesando..." : step === 3 ? "Registrar compra" : "Continuar →"}
+                  {isSubmitting
+                    ? "Procesando..."
+                    : step === 3
+                      ? metodoPago === "card" ? "Pagar con tarjeta →" : "Registrar compra"
+                      : "Continuar →"}
                 </button>
               </div>
             </div>
@@ -291,7 +379,9 @@ export default function Checkout() {
               <div className="flex justify-between font-black text-lg text-brand-blue mt-3">
                 <span>Total</span><span>${total.toFixed(2)}</span>
               </div>
-              <div className="bg-secondary rounded p-2 text-xs mt-4 flex items-center gap-2"><Lock className="h-3 w-3" /> Compra protegida y encriptada</div>
+              <div className="bg-secondary rounded p-2 text-xs mt-4 flex items-center gap-2">
+                <Lock className="h-3 w-3" /> Compra protegida y encriptada
+              </div>
             </aside>
           </div>
         )}
