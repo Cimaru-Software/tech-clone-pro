@@ -33,10 +33,14 @@ const estadoColors: Record<EstadoCompra, { bg: string; color: string }> = {
   RECHAZADO: { bg: "#fee2e2", color: "#991b1b" },
 };
 
+const PAGE_SIZE = 10;
+
 export default function ComprobantesPage() {
   const [compras, setCompras] = useState<Compra[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
   async function fetchCompras() {
     setLoading(true);
@@ -106,14 +110,50 @@ export default function ComprobantesPage() {
     }
   }
 
+  const normalizedSearch = search.trim().toLowerCase();
+  const comprasFiltradas = compras.filter((c) => {
+    if (!normalizedSearch) return true;
+    const nombreCompleto = `${c.cliente.nombre} ${c.cliente.apellido}`.toLowerCase();
+    return nombreCompleto.includes(normalizedSearch) || c.cliente.email.toLowerCase().includes(normalizedSearch);
+  });
+  const totalPages = Math.max(1, Math.ceil(comprasFiltradas.length / PAGE_SIZE));
+  const pagina = Math.min(currentPage, totalPages);
+  const comprasPagina = comprasFiltradas.slice((pagina - 1) * PAGE_SIZE, pagina * PAGE_SIZE);
+
+  function resetPage() { setCurrentPage(1); }
+
   return (
     <div>
-      <h1 style={{ fontSize: "1.5rem", fontWeight: "700", color: "#111827", marginBottom: "1.5rem" }}>Validación de comprobantes ({compras.length})</h1>
+      <h1 style={{ fontSize: "1.5rem", fontWeight: "700", color: "#111827", marginBottom: "1rem" }}>Validación de comprobantes ({compras.length})</h1>
+      <div style={{ background: "white", borderRadius: "12px", padding: "1rem 1.25rem", marginBottom: "1rem", boxShadow: "0 1px 4px rgba(0,0,0,0.06)", display: "flex", flexWrap: "wrap", gap: "0.75rem", alignItems: "center" }}>
+        <div style={{ position: "relative", flex: "1", minWidth: "240px" }}>
+          <span style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", color: "#94a3b8", fontSize: "0.9rem" }}>🔍</span>
+          <input
+            type="text"
+            placeholder="Buscar por nombre o correo..."
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); resetPage(); }}
+            style={{ width: "100%", padding: "0.55rem 0.75rem 0.55rem 2.25rem", border: "1.5px solid #e2e8f0", borderRadius: "8px", fontSize: "0.875rem", outline: "none", boxSizing: "border-box" }}
+          />
+        </div>
+        <span style={{ fontSize: "0.8rem", color: "#64748b", whiteSpace: "nowrap" }}>
+          <b style={{ color: "#0f172a" }}>{comprasFiltradas.length}</b> de {compras.length}
+        </span>
+        {search && (
+          <button
+            onClick={() => { setSearch(""); resetPage(); }}
+            style={{ background: "#fee2e2", color: "#dc2626", border: "none", borderRadius: "6px", padding: "0.35rem 0.65rem", fontSize: "0.75rem", cursor: "pointer", fontWeight: "600" }}
+          >
+            ✕ Limpiar
+          </button>
+        )}
+      </div>
       {loading ? (
         <div style={{ textAlign: "center", padding: "3rem", color: "#6b7280" }}>Cargando...</div>
       ) : (
+        <>
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-          {compras.map((c) => {
+          {comprasPagina.map((c) => {
             const colors = estadoColors[c.estado];
             const isExpanded = expanded === c.id;
             return (
@@ -168,10 +208,22 @@ export default function ComprobantesPage() {
               </div>
             );
           })}
-          {compras.length === 0 && (
-            <div style={{ textAlign: "center", padding: "3rem", color: "#9ca3af", background: "white", borderRadius: "12px" }}>No hay comprobantes por validar.</div>
+          {comprasPagina.length === 0 && (
+            <div style={{ textAlign: "center", padding: "3rem", color: "#9ca3af", background: "white", borderRadius: "12px" }}>{compras.length === 0 ? "No hay comprobantes por validar." : "No hay resultados para la búsqueda."}</div>
           )}
         </div>
+        {totalPages > 1 && (
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "1rem", padding: "0 0.25rem" }}>
+            <span style={{ fontSize: "0.8rem", color: "#64748b" }}>Página <b>{pagina}</b> de <b>{totalPages}</b> · mostrando {comprasPagina.length} comprobantes</span>
+            <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap" }}>
+              <button onClick={() => setCurrentPage(1)} disabled={pagina === 1} style={{ padding: "0.4rem 0.7rem", border: "1.5px solid #e2e8f0", borderRadius: "7px", background: "white", cursor: pagina === 1 ? "not-allowed" : "pointer", color: pagina === 1 ? "#cbd5e1" : "#475569", fontSize: "0.8rem", fontWeight: "600" }}>«</button>
+              <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={pagina === 1} style={{ padding: "0.4rem 0.8rem", border: "1.5px solid #e2e8f0", borderRadius: "7px", background: "white", cursor: pagina === 1 ? "not-allowed" : "pointer", color: pagina === 1 ? "#cbd5e1" : "#475569", fontSize: "0.8rem", fontWeight: "600" }}>‹ Anterior</button>
+              <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={pagina === totalPages} style={{ padding: "0.4rem 0.8rem", border: "1.5px solid #e2e8f0", borderRadius: "7px", background: "white", cursor: pagina === totalPages ? "not-allowed" : "pointer", color: pagina === totalPages ? "#cbd5e1" : "#475569", fontSize: "0.8rem", fontWeight: "600" }}>Siguiente ›</button>
+              <button onClick={() => setCurrentPage(totalPages)} disabled={pagina === totalPages} style={{ padding: "0.4rem 0.7rem", border: "1.5px solid #e2e8f0", borderRadius: "7px", background: "white", cursor: pagina === totalPages ? "not-allowed" : "pointer", color: pagina === totalPages ? "#cbd5e1" : "#475569", fontSize: "0.8rem", fontWeight: "600" }}>»</button>
+            </div>
+          </div>
+        )}
+        </>
       )}
     </div>
   );

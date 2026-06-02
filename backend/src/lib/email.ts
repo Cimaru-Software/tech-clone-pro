@@ -210,6 +210,55 @@ export function purchasePendingCustomerEmail(input: {
   };
 }
 
+export function cardPurchaseConfirmedCustomerEmail(input: {
+  pedidoId: string;
+  compraId: string;
+  cliente: Customer;
+  total: unknown;
+  items: OrderItem[];
+}) {
+  return {
+    to: input.cliente.email,
+    subject: `¡Gracias por tu compra! Pedido #${input.pedidoId.slice(-8)}`,
+    preheader: "Tu pago fue procesado correctamente.",
+    title: "¡Gracias por tu compra!",
+    intro: `Hola ${input.cliente.nombre || ""}, tu pago con tarjeta fue procesado correctamente. Te enviamos los detalles de tu pedido.`,
+    content: `
+      ${detailRows([
+        ["Compra", `#${input.compraId.slice(-8)}`],
+        ["Pedido", `#${input.pedidoId.slice(-8)}`],
+        ["Estado", "Pendiente de envío"],
+        ["Total", money(input.total)],
+      ])}
+      ${itemsTable(input.items)}
+    `,
+    action: { label: "Ver mis pedidos", href: `${getBaseUrl().replace(":3001", ":5173")}/mi-cuenta/pedidos` },
+  };
+}
+
+export function cardPurchaseConfirmedAdminEmail(input: {
+  pedidoId: string;
+  compraId: string;
+  cliente: Customer;
+  total: unknown;
+}) {
+  return {
+    to: process.env.MAIL_RECIPIENT || "",
+    subject: `Nueva compra con tarjeta #${input.pedidoId.slice(-8)}`,
+    preheader: "Se realizó una compra con tarjeta de crédito/débito.",
+    title: "Nueva compra con tarjeta",
+    intro: `${input.cliente.nombre || "Un cliente"} realizó una compra con tarjeta. El pedido fue creado automáticamente.`,
+    content: detailRows([
+      ["Compra", `#${input.compraId.slice(-8)}`],
+      ["Pedido", `#${input.pedidoId.slice(-8)}`],
+      ["Cliente", `${input.cliente.nombre || ""} ${input.cliente.apellido || ""}`.trim()],
+      ["Correo", input.cliente.email],
+      ["Total", money(input.total)],
+    ]),
+    action: { label: "Ver pedidos", href: `${getBaseUrl()}/admin/pedidos` },
+  };
+}
+
 export function receiptApprovedEmail(input: {
   pedidoId?: string;
   compraId: string;

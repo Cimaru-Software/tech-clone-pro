@@ -111,8 +111,19 @@
   h1, h2, h3, h4 { letter-spacing: -0.01em; }
 }
 
+/* Hide the Plux trigger button injected before the app; checkout opens it programmatically. */
+#ButtonPaybox > #pay {
+  position: absolute !important;
+  left: -9999px !important;
+  top: auto !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
 /* Plux modal — must render above everything */
-#ButtonPaybox,
 .paybox_modal,
 .paybox_modal__bg,
 #paybox_modal,

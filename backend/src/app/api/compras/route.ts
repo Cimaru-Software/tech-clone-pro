@@ -5,12 +5,35 @@ import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
-import { purchasePendingAdminEmail, purchasePendingCustomerEmail, sendMailSafe } from "@/lib/email";
+import {
+  purchasePendingAdminEmail,
+  purchasePendingCustomerEmail,
+  cardPurchaseConfirmedCustomerEmail,
+  cardPurchaseConfirmedAdminEmail,
+  sendMailSafe,
+} from "@/lib/email";
+import { emitirFacturaContifico } from "@/lib/contifico-facturacion";
 
 const itemSchema = z.object({
   productoId: z.string().min(1),
   cantidad: z.number().int().positive(),
   precio: z.number().positive(),
+});
+
+const facturaSchema = z.object({
+  tipoIdentificacion: z.enum(["cedula", "ruc", "pasaporte"]),
+  identificacion: z.string().trim().min(4),
+  razonSocial: z.string().trim().min(1),
+  email: z.string().trim().email(),
+  telefono: z.string().trim().min(7),
+  direccion: z.string().trim().min(1),
+}).superRefine((data, ctx) => {
+  if (data.tipoIdentificacion === "cedula" && data.identificacion.length !== 10) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["identificacion"], message: "La cédula debe tener 10 dígitos" });
+  }
+  if (data.tipoIdentificacion === "ruc" && data.identificacion.length !== 13) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["identificacion"], message: "El RUC debe tener 13 dígitos" });
+  }
 });
 
 function getPrecioFinal(precio: unknown, descuento: number) {
@@ -63,6 +86,7 @@ export async function POST(request: NextRequest) {
     let provincia: string;
     let notas: string;
     let items: z.infer<typeof itemSchema>[];
+    let factura: z.infer<typeof facturaSchema>;
     let comprobante: File | null = null;
     let pluxTransaccion: string | null = null;
     let pluxToken: string | null = null;
@@ -75,6 +99,7 @@ export async function POST(request: NextRequest) {
       provincia = String(body.provincia || "").trim();
       notas = String(body.notas || "").trim();
       items = itemSchema.array().parse(body.items);
+      factura = facturaSchema.parse(body.factura || {});
       pluxTransaccion = body.pluxTransaccion ? String(body.pluxTransaccion) : null;
       pluxToken = body.pluxToken ? String(body.pluxToken) : null;
     } else {
@@ -85,6 +110,14 @@ export async function POST(request: NextRequest) {
       provincia = String(formData.get("provincia") || "").trim();
       notas = String(formData.get("notas") || "").trim();
       items = itemSchema.array().parse(JSON.parse(String(formData.get("items") || "[]")));
+      factura = facturaSchema.parse({
+        tipoIdentificacion: String(formData.get("facturaTipoIdentificacion") || ""),
+        identificacion: String(formData.get("facturaIdentificacion") || ""),
+        razonSocial: String(formData.get("facturaRazonSocial") || ""),
+        email: String(formData.get("facturaEmail") || ""),
+        telefono: String(formData.get("facturaTelefono") || ""),
+        direccion: String(formData.get("facturaDireccion") || ""),
+      });
       const comprobanteField = formData.get("comprobante");
       comprobante = comprobanteField instanceof File ? comprobanteField : null;
     }
@@ -139,6 +172,8 @@ export async function POST(request: NextRequest) {
     const subtotal = itemsConPrecio.reduce((acc, item) => acc + item.precio * item.cantidad, 0);
     const total = getTotal(subtotal);
 
+    // Para pago con tarjeta: compra APROBADO + pedido PENDIENTE creado automáticamente
+    // Para transferencia: compra PENDIENTE, sin pedido (admin valida el comprobante)
     const compra = await prisma.compra.create({
       data: {
         clienteId: payload.id,
@@ -148,9 +183,16 @@ export async function POST(request: NextRequest) {
         ciudad,
         provincia,
         notas,
+        estado: metodoPago === "card" ? "APROBADO" : "PENDIENTE",
         ...(comprobantePath ? { comprobantePath } : {}),
         ...(pluxTransaccion ? { pluxTransaccion } : {}),
         ...(pluxToken ? { pluxToken } : {}),
+        facturaTipoIdentificacion: factura.tipoIdentificacion,
+        facturaIdentificacion: factura.identificacion,
+        facturaRazonSocial: factura.razonSocial,
+        facturaEmail: factura.email,
+        facturaTelefono: factura.telefono,
+        facturaDireccion: factura.direccion,
         items: {
           create: itemsConPrecio.map((item) => ({
             productoId: item.productoId,
@@ -165,29 +207,79 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    await Promise.all([
-      sendMailSafe(purchasePendingAdminEmail({
-        compraId: compra.id,
-        cliente: compra.cliente,
-        total: compra.total,
-        comprobantePath: comprobantePath ?? undefined,
-      })),
-      sendMailSafe(purchasePendingCustomerEmail({
-        compraId: compra.id,
-        cliente: compra.cliente,
-        total: compra.total,
-        items: compra.items,
-      })),
-    ]);
+    if (metodoPago === "card") {
+      // Crear pedido directamente en estado PENDIENTE
+      const pedido = await prisma.pedido.create({
+        data: {
+          clienteId: payload.id,
+          compraId: compra.id,
+          estado: "PENDIENTE",
+          metodoPago: "card",
+          total,
+          direccion,
+          ciudad,
+          provincia,
+          notas,
+          items: {
+            create: itemsConPrecio.map((item) => ({
+              productoId: item.productoId,
+              cantidad: item.cantidad,
+              precio: item.precio,
+            })),
+          },
+        },
+      });
+
+      await Promise.all([
+        sendMailSafe(cardPurchaseConfirmedCustomerEmail({
+          pedidoId: pedido.id,
+          compraId: compra.id,
+          cliente: compra.cliente,
+          total: compra.total,
+          items: compra.items,
+        })),
+        sendMailSafe(cardPurchaseConfirmedAdminEmail({
+          pedidoId: pedido.id,
+          compraId: compra.id,
+          cliente: compra.cliente,
+          total: compra.total,
+        })),
+      ]);
+
+      const facturaContifico = await emitirFacturaContifico(compra.id).catch((err) => ({
+        estado: "error",
+        error: err instanceof Error ? err.message : String(err),
+      }));
+      return NextResponse.json({ compra, facturaContifico }, { status: 201 });
+    } else {
+      // Transferencia: notificar al admin y al cliente que está pendiente de validación
+      await Promise.all([
+        sendMailSafe(purchasePendingAdminEmail({
+          compraId: compra.id,
+          cliente: compra.cliente,
+          total: compra.total,
+          comprobantePath: comprobantePath ?? undefined,
+        })),
+        sendMailSafe(purchasePendingCustomerEmail({
+          compraId: compra.id,
+          cliente: compra.cliente,
+          total: compra.total,
+          items: compra.items,
+        })),
+      ]);
+    }
 
     return NextResponse.json({ compra }, { status: 201 });
   } catch (error) {
+    console.error("[compras POST]", error);
     if (error instanceof z.ZodError || error instanceof SyntaxError) {
-      return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
+      return NextResponse.json({ error: "Datos inválidos", details: error instanceof z.ZodError ? error.errors : undefined }, { status: 400 });
     }
     if (error instanceof Error && error.message === "Producto inválido") {
       return NextResponse.json({ error: "Producto inválido" }, { status: 400 });
     }
-    return NextResponse.json({ error: "Error interno" }, { status: 500 });
+    return NextResponse.json({
+      error: process.env.NODE_ENV === "production" ? "Error interno" : error instanceof Error ? error.message : "Error interno",
+    }, { status: 500 });
   }
 }

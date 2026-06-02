@@ -1,11 +1,30 @@
 const BASE_URL_V1 = "https://api.contifico.com/sistema/api/v1";
 const BASE_URL_V2 = "https://api.contifico.com/sistema/api/v2";
 
-function headers() {
+type ContificoContext = "sync" | "billing";
+
+function envFor(context: ContificoContext) {
+  if (context === "billing") {
+    return {
+      apiKey: process.env.CONTIFICO_BILLING_API_KEY,
+      apiToken: process.env.CONTIFICO_BILLING_API_TOKEN,
+    };
+  }
+
+  return {
+    apiKey: process.env.CONTIFICO_API_KEY,
+    apiToken: process.env.CONTIFICO_API_TOKEN,
+  };
+}
+
+function headers(context: ContificoContext = "sync") {
+  const { apiKey, apiToken } = envFor(context);
+  if (!apiKey) throw new Error(`CONTIFICO_${context === "billing" ? "BILLING_" : ""}API_KEY no configurado`);
+
   return {
     "Content-Type": "application/json",
-    Authorization: process.env.CONTIFICO_API_KEY!,
-    token: process.env.CONTIFICO_API_TOKEN!,
+    Authorization: apiKey,
+    ...(apiToken ? { token: apiToken } : {}),
   };
 }
 
@@ -47,18 +66,45 @@ export interface ContificoDocumentoDetalle {
 }
 
 export interface ContificoDocumento {
-  fecha: string; // dd/MM/yyyy
+  pos: string;
+  fecha_emision: string; // dd/MM/yyyy
   tipo_documento: string; // "FAC"
-  pos: boolean;
+  documento: string;
+  autorizacion: string;
+  tipo_registro: "CLI";
+  estado: "P" | "C";
   descripcion: string;
   subtotal_0: number;
   subtotal_12: number;
+  ice: number;
+  servicio: number;
   iva: number;
   total: number;
-  porcentaje_descuento: number;
-  persona_id: string;
-  vendedor_id?: string;
+  adicional1?: string;
+  adicional2?: string;
+  cliente: ContificoCliente;
   detalles: ContificoDocumentoDetalle[];
+  cobros?: ContificoCobro[];
+}
+
+export interface ContificoCliente {
+  ruc: string;
+  cedula: string;
+  razon_social: string;
+  telefonos: string;
+  direccion: string;
+  tipo: "N" | "J" | "I" | "P";
+  email: string;
+  es_extranjero: boolean;
+}
+
+export interface ContificoCobro {
+  forma_cobro: "TC" | "TRA";
+  monto: string;
+  fecha: string;
+  tipo_ping?: string;
+  cuenta_bancaria_id?: string;
+  numero_comprobante?: string;
 }
 
 // Obtiene los IDs de productos que tienen movimientos en la Bodega Ecommerce.
@@ -73,7 +119,7 @@ async function getProductIdsBodegaEcommerce(): Promise<Set<string>> {
   while (true) {
     const res = await fetch(
       `${BASE_URL_V2}/movimiento-inventario/?format=json&bodega_id=${bodegaId}&page=${page}`,
-      { headers: headers(), cache: "no-store" }
+      { headers: headers("sync"), cache: "no-store" }
     );
     if (!res.ok) {
       const text = await res.text();
@@ -115,7 +161,7 @@ export async function getProductos(): Promise<ContificoProducto[]> {
   while (true) {
     const res = await fetch(
       `${BASE_URL_V2}/producto/?format=json&page=${page}`,
-      { headers: headers(), cache: "no-store" }
+      { headers: headers("sync"), cache: "no-store" }
     );
     if (!res.ok) {
       const text = await res.text();
@@ -142,7 +188,7 @@ export async function getProductos(): Promise<ContificoProducto[]> {
 
 export async function getProducto(id: string): Promise<ContificoProducto> {
   const res = await fetch(`${BASE_URL_V2}/producto/${id}/?format=json`, {
-    headers: headers(),
+    headers: headers("sync"),
     cache: "no-store",
   });
   if (!res.ok) {
@@ -154,7 +200,7 @@ export async function getProducto(id: string): Promise<ContificoProducto> {
 
 export async function getStock(id: string): Promise<ContificoStock[]> {
   const res = await fetch(`${BASE_URL_V2}/producto/${id}/stock/?format=json`, {
-    headers: headers(),
+    headers: headers("sync"),
     cache: "no-store",
   });
   if (!res.ok) {
@@ -170,12 +216,28 @@ export async function crearDocumento(
 ): Promise<{ id: string; secuencial?: string }> {
   const res = await fetch(`${BASE_URL_V1}/documento/?format=json`, {
     method: "POST",
-    headers: headers(),
+    headers: headers("billing"),
     body: JSON.stringify(doc),
   });
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`Contífico crearDocumento: ${res.status} ${text}`);
+  }
+  return res.json();
+}
+
+export async function crearCobro(
+  documentoId: string,
+  cobro: ContificoCobro
+): Promise<{ id: string }> {
+  const res = await fetch(`${BASE_URL_V1}/documento/${documentoId}/cobro/?format=json`, {
+    method: "POST",
+    headers: headers("billing"),
+    body: JSON.stringify(cobro),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Contífico crearCobro: ${res.status} ${text}`);
   }
   return res.json();
 }
@@ -190,9 +252,12 @@ export function stockTotal(bodegas: ContificoStock[]): number {
 }
 
 export function buildDocumentoFromPedido(params: {
-  fecha: string;
-  personaId: string;
+  fechaEmision: string;
+  documento: string;
+  autorizacion: string;
   descripcion: string;
+  cliente: ContificoCliente;
+  cobro: ContificoCobro;
   items: Array<{
     contificoId: string;
     cantidad: number;
@@ -200,6 +265,9 @@ export function buildDocumentoFromPedido(params: {
     ivaPorc: number;
   }>;
 }): ContificoDocumento {
+  const pos = process.env.CONTIFICO_BILLING_POS_ID || process.env.CONTIFICO_BILLING_API_TOKEN;
+  if (!pos) throw new Error("CONTIFICO_BILLING_POS_ID o CONTIFICO_BILLING_API_TOKEN no configurado");
+
   let subtotal0 = 0;
   let subtotal12 = 0;
 
@@ -221,20 +289,31 @@ export function buildDocumentoFromPedido(params: {
     };
   });
 
-  const iva = subtotal12 * 0.12;
+  const iva = params.items.reduce((sum, item) => {
+    const base = item.precio * item.cantidad;
+    return sum + (base * item.ivaPorc) / 100;
+  }, 0);
   const total = subtotal0 + subtotal12 + iva;
 
   return {
-    fecha: params.fecha,
+    pos,
+    fecha_emision: params.fechaEmision,
     tipo_documento: "FAC",
-    pos: false,
+    documento: params.documento,
+    autorizacion: params.autorizacion,
+    tipo_registro: "CLI",
+    estado: "C",
     descripcion: params.descripcion,
     subtotal_0: Math.round(subtotal0 * 100) / 100,
     subtotal_12: Math.round(subtotal12 * 100) / 100,
+    ice: 0,
+    servicio: 0,
     iva: Math.round(iva * 100) / 100,
     total: Math.round(total * 100) / 100,
-    porcentaje_descuento: 0,
-    persona_id: params.personaId,
+    adicional1: params.descripcion,
+    adicional2: "",
+    cliente: params.cliente,
     detalles,
+    cobros: [params.cobro],
   };
 }

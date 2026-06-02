@@ -1,8 +1,8 @@
 import { Link } from "@/lib/router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { CheckCircle2, ChevronRight, Lock, Truck, CreditCard, Upload } from "lucide-react";
+import { CheckCircle2, ChevronRight, Lock, Truck, CreditCard, Upload, Loader2 } from "lucide-react";
 
 declare global {
   interface Window {
@@ -23,16 +23,30 @@ const ECUADOR_PROVINCES = [
   "Sucumbíos", "Tungurahua", "Zamora Chinchipe",
 ];
 
+const PLUX_TRIGGER_DELAY_MS = 900;
+const PLUX_VISIBLE_LOADING_MS = 6000;
+
 export default function Checkout() {
   const { items, subtotal, clear } = useCart();
   const { cliente, isAuthenticated, isLoading } = useAuth();
   const [step, setStep] = useState(1);
   const [purchaseId, setPurchaseId] = useState<string | null>(null);
+  const [paidByCard, setPaidByCard] = useState(false);
   const [shipping_form, setShippingForm] = useState({ direccion: "", ciudad: "", provincia: "", notas: "" });
+  const [billing_form, setBillingForm] = useState({
+    tipoIdentificacion: "cedula",
+    identificacion: "",
+    razonSocial: "",
+    email: "",
+    telefono: "",
+    direccion: "",
+  });
   const [metodoPago, setMetodoPago] = useState("transfer");
   const [comprobante, setComprobante] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isOpeningPlux, setIsOpeningPlux] = useState(false);
   const [error, setError] = useState("");
+  const pluxLoadingTimeoutRef = useRef<number | null>(null);
 
   const shipping = subtotal > 500 ? 0 : 8;
   const tax = subtotal * 0.15;
@@ -46,45 +60,82 @@ export default function Checkout() {
       direccion: form.direccion || cliente.direccion || "",
       ciudad: form.ciudad || cliente.ciudad || "",
     }));
+    setBillingForm((form) => ({
+      ...form,
+      razonSocial: form.razonSocial || `${cliente.nombre || ""} ${cliente.apellido || ""}`.trim(),
+      email: form.email || cliente.email || "",
+      telefono: form.telefono || cliente.telefono || "",
+      direccion: form.direccion || cliente.direccion || "",
+    }));
   }, [cliente]);
+
+  useEffect(() => {
+    return () => {
+      if (pluxLoadingTimeoutRef.current) window.clearTimeout(pluxLoadingTimeoutRef.current);
+    };
+  }, []);
+
+  const stopPluxLoading = () => {
+    if (pluxLoadingTimeoutRef.current) {
+      window.clearTimeout(pluxLoadingTimeoutRef.current);
+      pluxLoadingTimeoutRef.current = null;
+    }
+    setIsOpeningPlux(false);
+  };
+
+  const keepPluxLoadingVisible = () => {
+    if (pluxLoadingTimeoutRef.current) window.clearTimeout(pluxLoadingTimeoutRef.current);
+    pluxLoadingTimeoutRef.current = window.setTimeout(() => {
+      setIsOpeningPlux(false);
+      pluxLoadingTimeoutRef.current = null;
+    }, PLUX_VISIBLE_LOADING_MS);
+  };
 
 
   // __pluxCallback se redefine en cada render para capturar closures actualizados
   useEffect(() => {
     window.__pluxCallback = async (response) => {
-      if (response?.status === "succeeded" || response?.estado === "succeeded") {
-        setIsSubmitting(true);
-        setError("");
-        try {
-          const res = await fetch(`${backendUrl}/api/compras`, {
-            method: "POST",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              metodoPago: "card",
-              direccion: shipping_form.direccion.trim(),
-              ciudad: shipping_form.ciudad.trim(),
-              provincia: shipping_form.provincia.trim(),
-              notas: shipping_form.notas.trim(),
-              total,
-              items: items.map(i => ({ productoId: i.id, cantidad: i.qty, precio: itemPrice(i) })),
-              pluxTransaccion: response.id_transaccion || response.transaccion || "",
-              pluxToken: response.token || "",
-              pluxEstado: response.estado || response.status || "",
-            }),
-          });
-          const result = await res.json();
-          if (!res.ok) throw new Error(result.error || "No se pudo registrar la compra");
-          setPurchaseId(result.compra.id);
-          setStep(4);
-          clear();
-        } catch (err) {
-          setError(err instanceof Error ? err.message : "No se pudo registrar la compra");
-        } finally {
-          setIsSubmitting(false);
-        }
-      } else {
-        setError("El pago no pudo completarse. Intenta de nuevo.");
+      stopPluxLoading();
+      if (response?.status !== "succeeded") return; // usuario cerró el modal u otro evento
+      const detail = response.detail || {};
+      setIsSubmitting(true);
+      setError("");
+      try {
+        const res = await fetch(`${backendUrl}/api/compras`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            metodoPago: "card",
+            direccion: shipping_form.direccion.trim(),
+            ciudad: shipping_form.ciudad.trim(),
+            provincia: shipping_form.provincia.trim(),
+            notas: shipping_form.notas.trim(),
+            factura: {
+              tipoIdentificacion: billing_form.tipoIdentificacion,
+              identificacion: billing_form.identificacion.trim(),
+              razonSocial: billing_form.razonSocial.trim(),
+              email: billing_form.email.trim(),
+              telefono: billing_form.telefono.trim(),
+              direccion: billing_form.direccion.trim(),
+            },
+            total,
+            items: items.map(i => ({ productoId: i.id, cantidad: i.qty, precio: itemPrice(i) })),
+            pluxTransaccion: detail.id_transaccion || "",
+            pluxToken: detail.token || "",
+            pluxEstado: detail.state || "",
+          }),
+        });
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || "No se pudo registrar la compra");
+        setPurchaseId(result.compra.id);
+        setPaidByCard(true);
+        setStep(4);
+        clear();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "No se pudo registrar la compra");
+      } finally {
+        setIsSubmitting(false);
       }
     };
   });
@@ -104,6 +155,12 @@ export default function Checkout() {
       formData.append("ciudad", shipping_form.ciudad.trim());
       formData.append("provincia", shipping_form.provincia.trim());
       formData.append("notas", shipping_form.notas.trim());
+      formData.append("facturaTipoIdentificacion", billing_form.tipoIdentificacion);
+      formData.append("facturaIdentificacion", billing_form.identificacion.trim());
+      formData.append("facturaRazonSocial", billing_form.razonSocial.trim());
+      formData.append("facturaEmail", billing_form.email.trim());
+      formData.append("facturaTelefono", billing_form.telefono.trim());
+      formData.append("facturaDireccion", billing_form.direccion.trim());
       formData.append("total", String(total));
       formData.append("items", JSON.stringify(items.map(i => ({ productoId: i.id, cantidad: i.qty, precio: itemPrice(i) }))));
       formData.append("comprobante", comprobanteFile);
@@ -130,6 +187,7 @@ export default function Checkout() {
 
     const $ = window.jQuery;
     if (!$) {
+      stopPluxLoading();
       setError("Error al cargar la pasarela de pago. Recarga la página.");
       return;
     }
@@ -138,13 +196,13 @@ export default function Checkout() {
     // Plux lee window.data en tiempo de ejecución cuando el usuario confirma el pago.
     if (window.data) {
       window.data.PayboxSendmail    = cliente?.email || "";
-      window.data.PayboxSendname    = `${cliente?.nombre || ""} ${cliente?.apellido || ""}`.trim();
+      window.data.PayboxSendname    = billing_form.razonSocial.trim();
       window.data.PayboxBase0       = "0.00";
       window.data.PayboxBase12      = total.toFixed(2);
       window.data.PayboxDescription = `Compra - ${items.length} producto(s)`;
-      window.data.PayboxDirection   = shipping_form.direccion.trim();
-      window.data.PayBoxClientPhone = cliente?.telefono || "0999999999";
-      window.data.PayBoxClientIdentification = "";
+      window.data.PayboxDirection   = billing_form.direccion.trim();
+      window.data.PayBoxClientPhone = billing_form.telefono.trim();
+      window.data.PayBoxClientIdentification = billing_form.identificacion.trim();
     }
 
     // Plux inyecta el botón #pay dentro de #ButtonPaybox durante window.load.
@@ -152,7 +210,9 @@ export default function Checkout() {
     const btn = $("#pay");
     if (btn.length) {
       btn.trigger("click");
+      keepPluxLoadingVisible();
     } else {
+      stopPluxLoading();
       setError("La pasarela de pago no está lista. Recarga la página e inténtalo de nuevo.");
     }
   };
@@ -163,6 +223,10 @@ export default function Checkout() {
       setError("Completa todos los datos de envío.");
       return;
     }
+    if (!billing_form.identificacion.trim() || !billing_form.razonSocial.trim() || !billing_form.email.trim() || !billing_form.telefono.trim() || !billing_form.direccion.trim()) {
+      setError("Completa todos los datos de facturación.");
+      return;
+    }
     if (metodoPago === "transfer") {
       if (!comprobante) {
         setError("Debes cargar una imagen del comprobante de transferencia.");
@@ -170,7 +234,8 @@ export default function Checkout() {
       }
       submitTransferOrder(comprobante);
     } else {
-      triggerPlux();
+      setIsOpeningPlux(true);
+      window.setTimeout(triggerPlux, PLUX_TRIGGER_DELAY_MS);
     }
   };
 
@@ -209,6 +274,10 @@ export default function Checkout() {
       setError("Todos los datos de envío son obligatorios.");
       return;
     }
+    if (step === 2 && (!billing_form.identificacion.trim() || !billing_form.razonSocial.trim() || !billing_form.email.trim() || !billing_form.telefono.trim() || !billing_form.direccion.trim())) {
+      setError("Todos los datos de facturación son obligatorios.");
+      return;
+    }
     setStep(step + 1);
   };
 
@@ -229,16 +298,29 @@ export default function Checkout() {
         </div>
 
         {step === 4 ? (
-          <div className="bg-white rounded-lg p-10 max-w-xl mx-auto text-center">
-            <CheckCircle2 className="h-20 w-20 text-success mx-auto" />
-            <h1 className="text-3xl font-black text-brand-blue mt-4">¡Compra registrada!</h1>
-            <p className="text-muted-foreground mt-2">Tu compra <span className="font-bold text-foreground">#{purchaseId?.slice(-8)}</span> quedó pendiente de validación.</p>
-            <p className="text-sm text-muted-foreground mt-1">Cuando el pago sea confirmado se procesará tu pedido.</p>
-            <div className="grid sm:grid-cols-2 gap-3 mt-6">
-              <Link to="/tienda" className="bg-brand-red hover:bg-brand-red-dark text-white py-3 rounded font-bold">Seguir comprando</Link>
-              <Link to="/mi-cuenta/pedidos" className="bg-brand-blue text-white py-3 rounded font-bold">Ver mis pedidos</Link>
+          paidByCard ? (
+            <div className="bg-white rounded-lg p-10 max-w-xl mx-auto text-center">
+              <CheckCircle2 className="h-20 w-20 text-success mx-auto" />
+              <h1 className="text-3xl font-black text-brand-blue mt-4">¡Gracias por tu compra!</h1>
+              <p className="text-muted-foreground mt-2">Te enviamos los detalles por correo electrónico.</p>
+              <p className="text-sm text-muted-foreground mt-1">Pedido <span className="font-bold text-foreground">#{purchaseId?.slice(-8)}</span> registrado y en proceso.</p>
+              <div className="grid sm:grid-cols-2 gap-3 mt-6">
+                <Link to="/mi-cuenta/pedidos" className="bg-brand-blue text-white py-3 rounded font-bold">Ver tracking</Link>
+                <Link to="/tienda" className="bg-brand-red hover:bg-brand-red-dark text-white py-3 rounded font-bold">Seguir comprando</Link>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="bg-white rounded-lg p-10 max-w-xl mx-auto text-center">
+              <CheckCircle2 className="h-20 w-20 text-success mx-auto" />
+              <h1 className="text-3xl font-black text-brand-blue mt-4">¡Compra registrada!</h1>
+              <p className="text-muted-foreground mt-2">Tu compra <span className="font-bold text-foreground">#{purchaseId?.slice(-8)}</span> quedó pendiente de validación.</p>
+              <p className="text-sm text-muted-foreground mt-1">Cuando el pago sea confirmado se procesará tu pedido.</p>
+              <div className="grid sm:grid-cols-2 gap-3 mt-6">
+                <Link to="/tienda" className="bg-brand-red hover:bg-brand-red-dark text-white py-3 rounded font-bold">Seguir comprando</Link>
+                <Link to="/mi-cuenta/pedidos" className="bg-brand-blue text-white py-3 rounded font-bold">Ver mis pedidos</Link>
+              </div>
+            </div>
+          )
         ) : (
           <div className="grid lg:grid-cols-[1fr_360px] gap-6">
             <div className="bg-white rounded-lg p-6">
@@ -278,6 +360,58 @@ export default function Checkout() {
                       ))}
                     </select>
                     <textarea required placeholder="Referencias / instrucciones" className="border rounded px-3 py-2 md:col-span-2" rows={2} value={shipping_form.notas} onChange={e => setShippingForm(f => ({ ...f, notas: e.target.value }))} />
+                  </div>
+                  <div className="mt-6 border-t pt-5">
+                    <h3 className="text-lg font-black text-brand-blue mb-3">Datos de facturación</h3>
+                    <div className="grid md:grid-cols-2 gap-3 text-sm">
+                      <select
+                        required
+                        className="border rounded px-3 py-2"
+                        value={billing_form.tipoIdentificacion}
+                        onChange={e => setBillingForm(f => ({ ...f, tipoIdentificacion: e.target.value }))}
+                      >
+                        <option value="cedula">Cédula</option>
+                        <option value="ruc">RUC</option>
+                        <option value="pasaporte">Pasaporte</option>
+                      </select>
+                      <input
+                        required
+                        placeholder="Identificación"
+                        className="border rounded px-3 py-2"
+                        value={billing_form.identificacion}
+                        onChange={e => setBillingForm(f => ({ ...f, identificacion: e.target.value }))}
+                      />
+                      <input
+                        required
+                        placeholder="Razón social / nombres"
+                        className="border rounded px-3 py-2 md:col-span-2"
+                        value={billing_form.razonSocial}
+                        onChange={e => setBillingForm(f => ({ ...f, razonSocial: e.target.value }))}
+                      />
+                      <input
+                        required
+                        type="email"
+                        placeholder="Correo para factura"
+                        className="border rounded px-3 py-2"
+                        value={billing_form.email}
+                        onChange={e => setBillingForm(f => ({ ...f, email: e.target.value }))}
+                      />
+                      <input
+                        required
+                        type="tel"
+                        placeholder="Teléfono"
+                        className="border rounded px-3 py-2"
+                        value={billing_form.telefono}
+                        onChange={e => setBillingForm(f => ({ ...f, telefono: e.target.value }))}
+                      />
+                      <input
+                        required
+                        placeholder="Dirección de facturación"
+                        className="border rounded px-3 py-2 md:col-span-2"
+                        value={billing_form.direccion}
+                        onChange={e => setBillingForm(f => ({ ...f, direccion: e.target.value }))}
+                      />
+                    </div>
                   </div>
                 </>
               )}
@@ -335,11 +469,27 @@ export default function Checkout() {
                   )}
 
                   {metodoPago === "card" && (
-                    <div className="mt-4 border rounded p-4 bg-secondary/60 text-sm flex items-center gap-3">
-                      <CreditCard className="h-5 w-5 text-brand-blue shrink-0" />
-                      <p className="text-muted-foreground">
-                        Al hacer click en <strong>Pagar con tarjeta</strong> se abrirá la pasarela segura de Plux para ingresar los datos de tu tarjeta.
-                      </p>
+                    <div className="mt-4 border rounded p-4 bg-secondary/60 text-sm">
+                      <div className="flex items-center gap-3">
+                        <CreditCard className="h-5 w-5 text-brand-blue shrink-0" />
+                        <p className="text-muted-foreground">
+                          Al hacer click en <strong>Pagar con tarjeta</strong> se abrirá la pasarela segura de Plux para ingresar los datos de tu tarjeta.
+                        </p>
+                      </div>
+                      {isOpeningPlux && (
+                        <div className="mt-4 rounded border border-brand-blue/20 bg-white p-3">
+                          <div className="flex items-center gap-3">
+                            <Loader2 className="h-5 w-5 animate-spin text-brand-red shrink-0" />
+                            <div>
+                              <div className="font-bold text-brand-blue">Cargando pago Plux</div>
+                              <div className="text-xs text-muted-foreground">Preparando la pasarela segura...</div>
+                            </div>
+                          </div>
+                          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-secondary">
+                            <div className="h-full w-1/3 animate-[plux-loading_1.1s_ease-in-out_infinite] rounded-full bg-brand-red" />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -356,10 +506,17 @@ export default function Checkout() {
                 {error && <div className="text-sm font-semibold text-brand-red px-3 text-right">{error}</div>}
                 <button
                   onClick={() => step < 3 ? goNext() : finish()}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isOpeningPlux}
                   className="bg-brand-red hover:bg-brand-red-dark disabled:opacity-60 text-white font-bold px-6 py-2.5 rounded"
                 >
-                  {isSubmitting
+                  {isOpeningPlux
+                    ? (
+                      <span className="inline-flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Cargando Plux...
+                      </span>
+                    )
+                    : isSubmitting
                     ? "Procesando..."
                     : step === 3
                       ? metodoPago === "card" ? "Pagar con tarjeta →" : "Registrar compra"
@@ -386,6 +543,12 @@ export default function Checkout() {
           </div>
         )}
       </div>
+      <style>{`
+        @keyframes plux-loading {
+          0% { transform: translateX(-120%); }
+          100% { transform: translateX(320%); }
+        }
+      `}</style>
     </div>
   );
 }

@@ -16,19 +16,26 @@ type CartCtx = {
 };
 
 const Ctx = createContext<CartCtx | null>(null);
+const CART_STORAGE_KEY = "lcdc_cart";
+
+function getStoredCart(): CartItem[] {
+  try {
+    const raw = localStorage.getItem(CART_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((item) => item?.id && Number(item.qty) > 0);
+  } catch {
+    return [];
+  }
+}
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([]);
+  const [items, setItems] = useState<CartItem[]>(getStoredCart);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("lcdc_cart");
-      if (raw) setItems(JSON.parse(raw));
-    } catch {}
-  }, []);
-  useEffect(() => {
-    try { localStorage.setItem("lcdc_cart", JSON.stringify(items)); } catch {}
+    try { localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items)); } catch {}
   }, [items]);
 
   const add: CartCtx["add"] = (p, qty = 1) => {

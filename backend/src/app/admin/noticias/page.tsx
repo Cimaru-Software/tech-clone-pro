@@ -18,21 +18,28 @@ async function readJson(res: Response) {
   try { return JSON.parse(text); } catch { return { error: text }; }
 }
 
+const PAGE_SIZE = 10;
+
 export default function NoticiasPage() {
   const router = useRouter();
   const [noticias, setNoticias] = useState<Noticia[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalNoticias, setTotalNoticias] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   const fetchNoticias = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/noticias?publicado=all&limit=50");
+      const res = await fetch(`/api/noticias?publicado=all&page=${currentPage}&limit=${PAGE_SIZE}`);
       const data = await readJson(res);
       setNoticias(data.noticias || []);
+      setTotalNoticias(data.total || 0);
+      setTotalPages(Math.max(1, data.pages || 1));
     } catch { setError("Error de conexión"); }
     finally { setLoading(false); }
-  }, []);
+  }, [currentPage]);
 
   useEffect(() => { fetchNoticias(); }, [fetchNoticias]);
 
@@ -56,16 +63,19 @@ export default function NoticiasPage() {
     });
     if (!result.isConfirmed) return;
     await fetch(`/api/noticias/${n.id}`, { method: "DELETE" });
-    await fetchNoticias();
+    if (noticias.length === 1 && currentPage > 1) setCurrentPage((page) => page - 1);
+    else await fetchNoticias();
     Swal.fire({ title: "Eliminada", icon: "success", confirmButtonColor: "#0B2C5F" });
   }
+
+  const pagina = Math.min(currentPage, totalPages);
 
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
         <div>
           <h1 style={{ fontSize: "1.5rem", fontWeight: "700", color: "#0f172a", margin: 0 }}>Noticias</h1>
-          <p style={{ color: "#64748b", fontSize: "0.875rem", margin: "0.25rem 0 0" }}>{noticias.length} noticia{noticias.length !== 1 ? "s" : ""}</p>
+          <p style={{ color: "#64748b", fontSize: "0.875rem", margin: "0.25rem 0 0" }}>{totalNoticias} noticia{totalNoticias !== 1 ? "s" : ""}</p>
         </div>
         <button
           onClick={() => router.push("/admin/noticias/nueva")}
@@ -80,6 +90,7 @@ export default function NoticiasPage() {
       {loading ? (
         <div style={{ textAlign: "center", padding: "4rem", color: "#94a3b8" }}>Cargando...</div>
       ) : (
+        <>
         <div style={{ background: "white", borderRadius: "12px", boxShadow: "0 1px 4px rgba(0,0,0,0.08)", overflow: "hidden" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
@@ -144,6 +155,18 @@ export default function NoticiasPage() {
             </tbody>
           </table>
         </div>
+        {totalPages > 1 && (
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "1rem", padding: "0 0.25rem" }}>
+            <span style={{ fontSize: "0.8rem", color: "#64748b" }}>Página <b>{pagina}</b> de <b>{totalPages}</b> · mostrando {noticias.length} noticias</span>
+            <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap" }}>
+              <button onClick={() => setCurrentPage(1)} disabled={pagina === 1} style={{ padding: "0.4rem 0.7rem", border: "1.5px solid #e2e8f0", borderRadius: "7px", background: "white", cursor: pagina === 1 ? "not-allowed" : "pointer", color: pagina === 1 ? "#cbd5e1" : "#475569", fontSize: "0.8rem", fontWeight: "600" }}>«</button>
+              <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={pagina === 1} style={{ padding: "0.4rem 0.8rem", border: "1.5px solid #e2e8f0", borderRadius: "7px", background: "white", cursor: pagina === 1 ? "not-allowed" : "pointer", color: pagina === 1 ? "#cbd5e1" : "#475569", fontSize: "0.8rem", fontWeight: "600" }}>‹ Anterior</button>
+              <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={pagina === totalPages} style={{ padding: "0.4rem 0.8rem", border: "1.5px solid #e2e8f0", borderRadius: "7px", background: "white", cursor: pagina === totalPages ? "not-allowed" : "pointer", color: pagina === totalPages ? "#cbd5e1" : "#475569", fontSize: "0.8rem", fontWeight: "600" }}>Siguiente ›</button>
+              <button onClick={() => setCurrentPage(totalPages)} disabled={pagina === totalPages} style={{ padding: "0.4rem 0.7rem", border: "1.5px solid #e2e8f0", borderRadius: "7px", background: "white", cursor: pagina === totalPages ? "not-allowed" : "pointer", color: pagina === totalPages ? "#cbd5e1" : "#475569", fontSize: "0.8rem", fontWeight: "600" }}>»</button>
+            </div>
+          </div>
+        )}
+        </>
       )}
     </div>
   );

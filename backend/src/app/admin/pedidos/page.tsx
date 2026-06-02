@@ -29,10 +29,16 @@ const estadoColors: Record<EstadoPedido, { bg: string; color: string }> = {
   ENTREGADO:   { bg: "#d1fae5", color: "#065f46" },
 };
 
+const PAGE_SIZE = 10;
+
 export default function PedidosPage() {
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [fechaDesde, setFechaDesde] = useState("");
+  const [fechaHasta, setFechaHasta] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
   async function fetchPedidos() {
     setLoading(true);
@@ -49,14 +55,76 @@ export default function PedidosPage() {
     fetchPedidos();
   }
 
+  const normalizedSearch = search.trim().toLowerCase().replace(/^#/, "");
+  const pedidosFiltrados = pedidos.filter((p) => {
+    if (normalizedSearch) {
+      const fullId = p.id.toLowerCase();
+      const shortId = p.id.slice(-8).toLowerCase();
+      if (!fullId.includes(normalizedSearch) && !shortId.includes(normalizedSearch)) return false;
+    }
+
+    const createdAt = new Date(p.createdAt);
+    if (fechaDesde) {
+      const desde = new Date(`${fechaDesde}T00:00:00`);
+      if (createdAt < desde) return false;
+    }
+    if (fechaHasta) {
+      const hasta = new Date(`${fechaHasta}T23:59:59`);
+      if (createdAt > hasta) return false;
+    }
+    return true;
+  });
+  const totalPages = Math.max(1, Math.ceil(pedidosFiltrados.length / PAGE_SIZE));
+  const pagina = Math.min(currentPage, totalPages);
+  const pedidosPagina = pedidosFiltrados.slice((pagina - 1) * PAGE_SIZE, pagina * PAGE_SIZE);
+  const hasFilters = Boolean(search || fechaDesde || fechaHasta);
+
+  function resetPage() { setCurrentPage(1); }
+
   return (
     <div>
-      <h1 style={{ fontSize: "1.5rem", fontWeight: "700", color: "#111827", marginBottom: "1.5rem" }}>Pedidos ({pedidos.length})</h1>
+      <h1 style={{ fontSize: "1.5rem", fontWeight: "700", color: "#111827", marginBottom: "1rem" }}>Pedidos ({pedidos.length})</h1>
+      <div style={{ background: "white", borderRadius: "12px", padding: "1rem 1.25rem", marginBottom: "1rem", boxShadow: "0 1px 4px rgba(0,0,0,0.06)", display: "flex", flexWrap: "wrap", gap: "0.75rem", alignItems: "center" }}>
+        <div style={{ position: "relative", flex: "1", minWidth: "220px" }}>
+          <span style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", color: "#94a3b8", fontSize: "0.9rem" }}>🔍</span>
+          <input
+            type="text"
+            placeholder="Buscar por número o código de pedido..."
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); resetPage(); }}
+            style={{ width: "100%", padding: "0.55rem 0.75rem 0.55rem 2.25rem", border: "1.5px solid #e2e8f0", borderRadius: "8px", fontSize: "0.875rem", outline: "none", boxSizing: "border-box" }}
+          />
+        </div>
+        <input
+          type="date"
+          value={fechaDesde}
+          onChange={(e) => { setFechaDesde(e.target.value); resetPage(); }}
+          style={{ padding: "0.55rem 0.75rem", border: "1.5px solid #e2e8f0", borderRadius: "8px", fontSize: "0.8rem", outline: "none", color: fechaDesde ? "#0f172a" : "#94a3b8" }}
+          aria-label="Fecha desde"
+        />
+        <input
+          type="date"
+          value={fechaHasta}
+          onChange={(e) => { setFechaHasta(e.target.value); resetPage(); }}
+          style={{ padding: "0.55rem 0.75rem", border: "1.5px solid #e2e8f0", borderRadius: "8px", fontSize: "0.8rem", outline: "none", color: fechaHasta ? "#0f172a" : "#94a3b8" }}
+          aria-label="Fecha hasta"
+        />
+        <span style={{ fontSize: "0.8rem", color: "#64748b", whiteSpace: "nowrap" }}><b style={{ color: "#0f172a" }}>{pedidosFiltrados.length}</b> de {pedidos.length}</span>
+        {hasFilters && (
+          <button
+            onClick={() => { setSearch(""); setFechaDesde(""); setFechaHasta(""); resetPage(); }}
+            style={{ background: "#fee2e2", color: "#dc2626", border: "none", borderRadius: "6px", padding: "0.35rem 0.65rem", fontSize: "0.75rem", cursor: "pointer", fontWeight: "600" }}
+          >
+            ✕ Limpiar
+          </button>
+        )}
+      </div>
       {loading ? (
         <div style={{ textAlign: "center", padding: "3rem", color: "#6b7280" }}>Cargando...</div>
       ) : (
+        <>
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-          {pedidos.map(p => {
+          {pedidosPagina.map(p => {
             const colors = estadoColors[p.estado];
             const isExpanded = expanded === p.id;
             return (
@@ -115,10 +183,22 @@ export default function PedidosPage() {
               </div>
             );
           })}
-          {pedidos.length === 0 && (
-            <div style={{ textAlign: "center", padding: "3rem", color: "#9ca3af", background: "white", borderRadius: "12px" }}>No hay pedidos aún.</div>
+          {pedidosPagina.length === 0 && (
+            <div style={{ textAlign: "center", padding: "3rem", color: "#9ca3af", background: "white", borderRadius: "12px" }}>{pedidos.length === 0 ? "No hay pedidos aún." : "No hay pedidos con esos filtros."}</div>
           )}
         </div>
+        {totalPages > 1 && (
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "1rem", padding: "0 0.25rem" }}>
+            <span style={{ fontSize: "0.8rem", color: "#64748b" }}>Página <b>{pagina}</b> de <b>{totalPages}</b> · mostrando {pedidosPagina.length} pedidos</span>
+            <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap" }}>
+              <button onClick={() => setCurrentPage(1)} disabled={pagina === 1} style={{ padding: "0.4rem 0.7rem", border: "1.5px solid #e2e8f0", borderRadius: "7px", background: "white", cursor: pagina === 1 ? "not-allowed" : "pointer", color: pagina === 1 ? "#cbd5e1" : "#475569", fontSize: "0.8rem", fontWeight: "600" }}>«</button>
+              <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={pagina === 1} style={{ padding: "0.4rem 0.8rem", border: "1.5px solid #e2e8f0", borderRadius: "7px", background: "white", cursor: pagina === 1 ? "not-allowed" : "pointer", color: pagina === 1 ? "#cbd5e1" : "#475569", fontSize: "0.8rem", fontWeight: "600" }}>‹ Anterior</button>
+              <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={pagina === totalPages} style={{ padding: "0.4rem 0.8rem", border: "1.5px solid #e2e8f0", borderRadius: "7px", background: "white", cursor: pagina === totalPages ? "not-allowed" : "pointer", color: pagina === totalPages ? "#cbd5e1" : "#475569", fontSize: "0.8rem", fontWeight: "600" }}>Siguiente ›</button>
+              <button onClick={() => setCurrentPage(totalPages)} disabled={pagina === totalPages} style={{ padding: "0.4rem 0.7rem", border: "1.5px solid #e2e8f0", borderRadius: "7px", background: "white", cursor: pagina === totalPages ? "not-allowed" : "pointer", color: pagina === totalPages ? "#cbd5e1" : "#475569", fontSize: "0.8rem", fontWeight: "600" }}>»</button>
+            </div>
+          </div>
+        )}
+        </>
       )}
     </div>
   );

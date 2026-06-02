@@ -190,6 +190,12 @@ model Compra {
   pluxTransaccion  String?
   pluxToken        String?
   motivoRechazo    String?          @db.Text
+  facturaTipoIdentificacion String?
+  facturaIdentificacion     String?
+  facturaRazonSocial        String?
+  facturaEmail              String?
+  facturaTelefono           String?
+  facturaDireccion          String?
   items           ItemCompra[]
   facturaContifico ContificoFactura?
   createdAt       DateTime         @default(now())
@@ -231,6 +237,7 @@ model ContificoFactura {
   compra            Compra   @relation(fields: [compraId], references: [id])
   contificoDocId    String
   contificoSecuencial String?
+  contificoCobroForma String?
   estado            String   @default("emitida")
   createdAt         DateTime @default(now())
 

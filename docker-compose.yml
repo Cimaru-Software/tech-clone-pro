@@ -30,6 +30,8 @@ services:
         condition: service_healthy
       mailhog:
         condition: service_started
+    env_file:
+      - ./backend/.env
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/techclone
       ADMIN_JWT_SECRET: admin-super-secret-change-in-production
