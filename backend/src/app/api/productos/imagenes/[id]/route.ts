@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyAdminToken } from "@/lib/auth";
 import { unlink } from "fs/promises";
 import { join } from "path";
+import { getPublicDir } from "@/lib/paths";
 
 export async function DELETE(
   request: NextRequest,
@@ -22,7 +23,7 @@ export async function DELETE(
 
   // Delete file from disk
   try {
-    const filepath = join(process.cwd(), "public", imagen.path);
+    const filepath = join(getPublicDir(), imagen.path);
     await unlink(filepath);
   } catch {
     // File may not exist on disk, continue anyway

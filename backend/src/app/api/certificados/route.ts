@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyAdminToken } from "@/lib/auth";
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
+import { getPublicDir } from "@/lib/paths";
 import { v4 as uuidv4 } from "uuid";
 
 async function requireAdmin(request: NextRequest) {
@@ -37,7 +38,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Debes subir una imagen válida" }, { status: 400 });
     }
 
-    const dir = join(process.cwd(), "public", "images", "certificados");
+    const dir = join(getPublicDir(), "images", "certificados");
     await mkdir(dir, { recursive: true });
 
     const ext = file.name.split(".").pop() || "jpg";

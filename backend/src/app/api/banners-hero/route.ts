@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyAdminToken } from "@/lib/auth";
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
+import { getPublicDir } from "@/lib/paths";
 import { v4 as uuidv4 } from "uuid";
 
 function isImage(file: File) {
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Solo se permiten imágenes" }, { status: 400 });
     }
 
-    const dir = join(process.cwd(), "public", "images", "banners-hero");
+    const dir = join(getPublicDir(), "images", "banners-hero");
     await mkdir(dir, { recursive: true });
 
     const existing = await prisma.bannerHero.count();

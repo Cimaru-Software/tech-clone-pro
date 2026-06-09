@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyAdminToken, verifyClientToken } from "@/lib/auth";
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
+import { getPublicDir } from "@/lib/paths";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 import {
@@ -161,7 +162,7 @@ export async function POST(request: NextRequest) {
 
     let comprobantePath: string | null = null;
     if (metodoPago === "transfer" && comprobante) {
-      const dir = join(process.cwd(), "public", "images", "comprobantes");
+      const dir = join(getPublicDir(), "images", "comprobantes");
       await mkdir(dir, { recursive: true });
       const ext = comprobante.name.split(".").pop() || "jpg";
       const filename = `${uuidv4()}.${ext}`;

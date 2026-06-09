@@ -3,6 +3,7 @@ import { verifyAdminToken } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
+import { getPublicDir } from "@/lib/paths";
 import { v4 as uuidv4 } from "uuid";
 
 export async function POST(request: NextRequest) {
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Máximo 5 imágenes por producto" }, { status: 400 });
   }
 
-  const dir = join(process.cwd(), "public", "images", "productos", productoId);
+  const dir = join(getPublicDir(), "images", "productos", productoId);
   await mkdir(dir, { recursive: true });
 
   const imagenes = [];

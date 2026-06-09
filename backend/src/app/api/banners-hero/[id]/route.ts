@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyAdminToken } from "@/lib/auth";
 import { writeFile, mkdir, unlink } from "fs/promises";
 import { join } from "path";
+import { getPublicDir } from "@/lib/paths";
 import { v4 as uuidv4 } from "uuid";
 
 async function requireAdmin(request: NextRequest) {
@@ -12,7 +13,7 @@ async function requireAdmin(request: NextRequest) {
 
 async function deleteBannerFile(path: string) {
   try {
-    await unlink(join(process.cwd(), "public", path));
+    await unlink(join(getPublicDir(), path));
   } catch {
     // El archivo pudo haberse eliminado manualmente; la base de datos sigue siendo la fuente de verdad.
   }
@@ -44,7 +45,7 @@ export async function PUT(
         return NextResponse.json({ error: "Solo se permiten imágenes" }, { status: 400 });
       }
 
-      const dir = join(process.cwd(), "public", "images", "banners-hero");
+      const dir = join(getPublicDir(), "images", "banners-hero");
       await mkdir(dir, { recursive: true });
       const ext = file.name.split(".").pop() || "jpg";
       const filename = `${uuidv4()}.${ext}`;

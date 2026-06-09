@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminToken } from "@/lib/auth";
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
+import { getPublicDir } from "@/lib/paths";
 import { v4 as uuidv4 } from "uuid";
 
 async function requireAdmin(request: NextRequest) {
@@ -20,7 +21,7 @@ export async function POST(request: NextRequest) {
     if (!file || !file.type.startsWith("image/")) {
       return NextResponse.json({ error: "Imagen inválida" }, { status: 400 });
     }
-    const dir = join(process.cwd(), "public", "images", "noticias-contenido");
+    const dir = join(getPublicDir(), "images", "noticias-contenido");
     await mkdir(dir, { recursive: true });
     const ext = file.name.split(".").pop() || "jpg";
     const filename = `${uuidv4()}.${ext}`;

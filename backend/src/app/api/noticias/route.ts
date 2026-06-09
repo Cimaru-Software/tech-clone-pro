@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyAdminToken } from "@/lib/auth";
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
+import { getPublicDir } from "@/lib/paths";
 import { v4 as uuidv4 } from "uuid";
 
 async function requireAdmin(request: NextRequest) {
@@ -74,7 +75,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "La imagen de portada es obligatoria" }, { status: 400 });
     }
 
-    const dir = join(process.cwd(), "public", "images", "noticias");
+    const dir = join(getPublicDir(), "images", "noticias");
     await mkdir(dir, { recursive: true });
     const ext = portadaFile.name.split(".").pop() || "jpg";
     const filename = `${uuidv4()}.${ext}`;
