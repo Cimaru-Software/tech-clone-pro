@@ -17,7 +17,9 @@ export default function MiCuentaPage() {
     return <div className="container-x py-20 text-center text-muted-foreground">Cargando...</div>;
   }
 
-  if (!cliente) return null;
+  if (!cliente) {
+    return <div className="container-x py-20 text-center text-muted-foreground">Cargando...</div>;
+  }
 
   const handleLogout = async () => {
     await logout();
