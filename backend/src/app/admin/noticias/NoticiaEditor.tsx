@@ -85,7 +85,7 @@ const ResizableImage = Node.create({
     return ["img", mergeAttributes(HTMLAttributes)];
   },
   addNodeView() {
-    return ReactNodeViewRenderer(ResizableImageView as Parameters<typeof ReactNodeViewRenderer>[0]);
+    return ReactNodeViewRenderer(ResizableImageView as unknown as Parameters<typeof ReactNodeViewRenderer>[0]);
   },
 });
 
@@ -131,7 +131,7 @@ export default function NoticiaEditor({ content, onChange }: Props) {
   });
 
   useEffect(() => {
-    if (editor && content !== editor.getHTML()) editor.commands.setContent(content, false);
+    if (editor && content !== editor.getHTML()) editor.commands.setContent(content, false as unknown as import("@tiptap/core").SetContentOptions);
   }, [content, editor]);
 
   async function uploadImage(file: File) {
@@ -142,7 +142,7 @@ export default function NoticiaEditor({ content, onChange }: Props) {
     if (data.url && editor) {
       editor.chain().focus().insertContent({
         type: "resizableImage",
-        attrs: { src: `http://localhost:3001${data.url}`, width: "100%", align: "center" },
+        attrs: { src: `${data.url}`, width: "100%", align: "center" },
       }).run();
     }
   }

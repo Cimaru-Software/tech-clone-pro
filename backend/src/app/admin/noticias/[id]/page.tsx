@@ -34,7 +34,7 @@ export default function NoticiaFormPage() {
           setTitulo(d.noticia.titulo);
           setCuerpo(d.noticia.cuerpo);
           setPublicado(d.noticia.publicado);
-          setPortadaActual(`http://localhost:3001${d.noticia.portada}`);
+          setPortadaActual(`${d.noticia.portada}`);
         } else {
           setError("Noticia no encontrada");
         }

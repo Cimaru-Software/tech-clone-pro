@@ -214,7 +214,7 @@ export default function CertificadosPage() {
                 <tr key={cert.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
                   <td style={{ padding: "0.85rem 1rem", width: "160px" }}>
                     <img
-                      src={`http://localhost:3001${cert.path}`}
+                      src={`${cert.path}`}
                       alt={cert.nombre}
                       style={{ width: "120px", height: "80px", objectFit: "contain", borderRadius: "8px", border: "1px solid #e2e8f0", background: "#f8fafc" }}
                     />

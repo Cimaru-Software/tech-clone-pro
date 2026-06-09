@@ -104,7 +104,7 @@ export default function NoticiasPage() {
               {noticias.map((n) => (
                 <tr key={n.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
                   <td style={{ padding: "0.75rem 1rem", width: "100px" }}>
-                    <img src={`http://localhost:3001${n.portada}`} alt={n.titulo} style={{ width: "80px", height: "56px", objectFit: "cover", borderRadius: "6px", border: "1px solid #e2e8f0" }} />
+                    <img src={`${n.portada}`} alt={n.titulo} style={{ width: "80px", height: "56px", objectFit: "cover", borderRadius: "6px", border: "1px solid #e2e8f0" }} />
                   </td>
                   <td style={{ padding: "0.75rem 1rem", fontWeight: "600", color: "#0f172a", maxWidth: "320px" }}>
                     <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{n.titulo}</div>

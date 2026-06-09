@@ -383,7 +383,7 @@ export default function ProductosPage() {
                   >
                     <td style={{ padding: "0.75rem 1rem" }}>
                       {p.imagenes[0] ? (
-                        <img src={`http://localhost:3001${p.imagenes[0].path}`} alt={p.nombre}
+                        <img src={`${p.imagenes[0].path}`} alt={p.nombre}
                           style={{ width: "52px", height: "52px", objectFit: "cover", borderRadius: "8px", border: "1px solid #e2e8f0" }} />
                       ) : (
                         <div style={{ width: "52px", height: "52px", background: "#f1f5f9", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.25rem", border: "1px solid #e2e8f0" }}>📷</div>
@@ -717,7 +717,7 @@ export default function ProductosPage() {
                     {existingImages.map(img => (
                       <div key={img.id} style={{ position: "relative", aspectRatio: "1", borderRadius: "10px", overflow: "hidden", border: "1.5px solid #e2e8f0" }}>
                         <img
-                          src={`http://localhost:3001${img.path}`}
+                          src={`${img.path}`}
                           alt="Imagen del producto"
                           style={{ width: "100%", height: "100%", objectFit: "cover" }}
                         />

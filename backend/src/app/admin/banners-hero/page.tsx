@@ -254,7 +254,7 @@ export default function BannersHeroPage() {
                 <tr key={banner.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
                   <td style={{ padding: "0.85rem 1rem", width: "34%" }}>
                     <img
-                      src={`http://localhost:3001${banner.path}`}
+                      src={`${banner.path}`}
                       alt="Banner hero"
                       style={{ width: "260px", maxWidth: "100%", aspectRatio: "16 / 7", objectFit: "cover", borderRadius: "8px", border: "1px solid #e2e8f0", display: "block" }}
                     />

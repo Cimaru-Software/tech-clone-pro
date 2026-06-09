@@ -168,7 +168,7 @@ export default function BannerPromocionPage() {
             </button>
           </div>
           <img
-            src={`http://localhost:3001${banner.path}`}
+            src={`${banner.path}`}
             alt="Banner promoción"
             style={{ width: "100%", maxHeight: "350px", objectFit: "contain", borderRadius: "10px", border: "1px solid #e2e8f0", background: "#f8fafc" }}
           />
