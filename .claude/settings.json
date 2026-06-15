@@ -38,7 +38,8 @@
       "Bash(curl --max-time 15 -s -H 'Authorization: 0iEoM0G84uKqvMacY7lfZaiuJZebATkLNVDsearPQNI' -H 'token: 907cec7a-a93c-493e-aa64-cd96fbd89f47' 'https://api.contifico.com/sistema/api/v1/producto/MEegZXELkuK15dQ5/stock/?format=json&todas_bodegas=true')",
       "Bash(curl --max-time 15 -s -H 'Authorization: 0iEoM0G84uKqvMacY7lfZaiuJZebATkLNVDsearPQNI' -H 'token: 907cec7a-a93c-493e-aa64-cd96fbd89f47' 'https://api.contifico.com/sistema/api/v2/movimiento-inventario/?format=json&page=1')",
       "Bash(curl --max-time 15 -s -w '\\\\nSTATUS:%{http_code}' -H 'Authorization: 0iEoM0G84uKqvMacY7lfZaiuJZebATkLNVDsearPQNI' -H 'token: 907cec7a-a93c-493e-aa64-cd96fbd89f47' 'https://api.contifico.com/sistema/api/v2/bodega/RYWb4x8wxtE2AbZ1/stock/?format=json&page=1')",
-      "Bash(curl --max-time 15 -s -w '\\\\nSTATUS:%{http_code}' -H 'Authorization: 0iEoM0G84uKqvMacY7lfZaiuJZebATkLNVDsearPQNI' -H 'token: 907cec7a-a93c-493e-aa64-cd96fbd89f47' 'https://api.contifico.com/sistema/api/v2/bodega/RYWb4x8wxtE2AbZ1/productos/?format=json&page=1')"
+      "Bash(curl --max-time 15 -s -w '\\\\nSTATUS:%{http_code}' -H 'Authorization: 0iEoM0G84uKqvMacY7lfZaiuJZebATkLNVDsearPQNI' -H 'token: 907cec7a-a93c-493e-aa64-cd96fbd89f47' 'https://api.contifico.com/sistema/api/v2/bodega/RYWb4x8wxtE2AbZ1/productos/?format=json&page=1')",
+      "Bash(docker system *)"
     ]
   }
 }

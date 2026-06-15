@@ -1,18 +1,20 @@
 import { Link } from "@/lib/router";
 import { useState } from "react";
-import cctvImg from "@/assets/cat-cctv.jpg";
-import netImg from "@/assets/cat-network.jpg";
-import bioImg from "@/assets/cat-biometric.jpg";
-import deskImg from "@/assets/cat-desktop.jpg";
+import img1 from "@/assets/projects/1.jpeg";
+import img2 from "@/assets/projects/2.png";
+import img3 from "@/assets/projects/3.png";
+import img4 from "@/assets/projects/4.png";
+import img5 from "@/assets/projects/5.png";
+import img6 from "@/assets/projects/6.png";
 import { Quote, ArrowRight } from "lucide-react";
 
 const projects = [
-  { cat: "cctv", t: "Centro Comercial Mall del Sur", d: "120 cámaras IP 4K + central de monitoreo", img: cctvImg },
-  { cat: "redes", t: "Edificio Corporativo Trade Center", d: "Cableado Cat 6A · 8 pisos · 450 puntos", img: netImg },
-  { cat: "biometria", t: "Hospital Clínica Kennedy", d: "Control de acceso biométrico 12 áreas", img: bioImg },
-  { cat: "cctv", t: "Conjunto Residencial Los Ceibos", d: "Sistema perimetral + 32 cámaras", img: cctvImg },
-  { cat: "corporativo", t: "Banco Pichincha Sucursal Norte", d: "Infraestructura TI completa", img: deskImg },
-  { cat: "biometria", t: "Universidad Estatal", d: "Asistencia biométrica 800 colaboradores", img: bioImg },
+  { cat: "cctv", t: "CCTV – Chocolatera Cámaras", d: "Instalación de sistema de videovigilancia en La Chocolatera", img: img1, href: "https://www.facebook.com/share/r/1BGDbLW6y2/" },
+  { cat: "cctv", t: "Proyecto CCTV", d: "Sistema de cámaras de seguridad profesional", img: img2, href: "https://www.facebook.com/share/r/1TUGbRpCr7/" },
+  { cat: "redes", t: "Infraestructura de Red", d: "Cableado estructurado y conectividad empresarial", img: img3, href: "https://www.facebook.com/share/r/1ES6mVFCoF/" },
+  { cat: "corporativo", t: "Proyecto Corporativo", d: "Soluciones tecnológicas para entornos empresariales", img: img4, href: "https://www.instagram.com/reel/DBKCH7rPVg1/?utm_source=ig_web_copy_link" },
+  { cat: "biometria", t: "Control de Acceso", d: "Sistema biométrico de control de acceso", img: img5, href: "https://www.instagram.com/reel/DBKCH7rPVg1/?utm_source=ig_web_copy_link" },
+  { cat: "redes", t: "Red Empresarial", d: "Instalación de infraestructura de red de alto rendimiento", img: img6, href: "https://www.instagram.com/reel/DAZZo8-MW20/?utm_source=ig_web_copy_link" },
 ];
 const cats = [
   { k: "all", l: "Todos" },
@@ -61,16 +63,24 @@ export default function Proyectos() {
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
           {list.map((p, i) => (
-            <div key={i} className="group bg-white rounded-lg overflow-hidden border hover:shadow-card-hover transition-shadow">
-              <div className="aspect-[4/3] overflow-hidden">
-                <img src={p.img} alt={p.t} loading="lazy" className="h-full w-full object-cover group-hover:scale-105 transition-transform" />
+            <a key={i} href={p.href} target="_blank" rel="noopener noreferrer" className="group bg-white rounded-lg overflow-hidden border hover:shadow-card-hover hover:border-brand-red transition-all duration-300 cursor-pointer">
+              <div className="aspect-[4/3] overflow-hidden relative">
+                <img src={p.img} alt={p.t} loading="lazy" className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                <div className="absolute inset-0 bg-brand-blue/0 group-hover:bg-brand-blue/60 transition-all duration-300 flex items-center justify-center">
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center gap-2 text-white">
+                    <div className="bg-brand-red rounded-full p-3">
+                      <ArrowRight className="h-6 w-6" />
+                    </div>
+                    <span className="text-sm font-bold tracking-wide">Ver proyecto</span>
+                  </div>
+                </div>
               </div>
-              <div className="p-4">
+              <div className="p-4 group-hover:bg-brand-red/5 transition-colors duration-300">
                 <div className="text-xs uppercase font-bold text-brand-red">{p.cat}</div>
-                <h3 className="font-bold text-brand-blue mt-1">{p.t}</h3>
+                <h3 className="font-bold text-brand-blue mt-1 group-hover:text-brand-red transition-colors duration-300">{p.t}</h3>
                 <p className="text-sm text-muted-foreground mt-1">{p.d}</p>
               </div>
-            </div>
+            </a>
           ))}
         </div>
       </section>
