@@ -9,19 +9,20 @@ import img6 from "@/assets/projects/6.png";
 import { Quote, ArrowRight } from "lucide-react";
 
 const projects = [
-  { cat: "cctv", t: "CCTV – Chocolatera Cámaras", d: "Instalación de sistema de videovigilancia en La Chocolatera", img: img1, href: "https://www.facebook.com/share/r/1BGDbLW6y2/" },
-  { cat: "cctv", t: "Proyecto CCTV", d: "Sistema de cámaras de seguridad profesional", img: img2, href: "https://www.facebook.com/share/r/1TUGbRpCr7/" },
-  { cat: "redes", t: "Infraestructura de Red", d: "Cableado estructurado y conectividad empresarial", img: img3, href: "https://www.facebook.com/share/r/1ES6mVFCoF/" },
-  { cat: "corporativo", t: "Proyecto Corporativo", d: "Soluciones tecnológicas para entornos empresariales", img: img4, href: "https://www.instagram.com/reel/DBKCH7rPVg1/?utm_source=ig_web_copy_link" },
-  { cat: "biometria", t: "Control de Acceso", d: "Sistema biométrico de control de acceso", img: img5, href: "https://www.instagram.com/reel/DBKCH7rPVg1/?utm_source=ig_web_copy_link" },
-  { cat: "redes", t: "Red Empresarial", d: "Instalación de infraestructura de red de alto rendimiento", img: img6, href: "https://www.instagram.com/reel/DAZZo8-MW20/?utm_source=ig_web_copy_link" },
+  { cat: "cctv", t: "Cámaras y paneles solares - Chocolatera (Salinas)", d: "Instalación de sistema de videovigilancia con energía renovable", img: img1, href: "https://www.facebook.com/share/r/1BGDbLW6y2/" },
+  { cat: "redes", t: "Reubicación de antenas - Lab Genesis", d: "Instalación y configuración de radio enlace", img: img2, href: "https://www.facebook.com/share/r/1TUGbRpCr7/" },
+  { cat: "aire", t: "Revisión y mantenimiento de A/C", d: "Revisión y mantenimiento de A/C", img: img3, href: "https://www.facebook.com/share/r/1ES6mVFCoF/" },
+  { cat: "impresoras", t: "Revisión y mantenimiento de impresora", d: "Revisión y mantenimiento de impresora", img: img4, href: "https://www.instagram.com/reel/DBKCH7rPVg1/?utm_source=ig_web_copy_link" },
+  { cat: "cerco", t: "Instalación y configuración de cerco eléctrico", d: "Instalación y configuración de cerco eléctrico", img: img5, href: "https://www.instagram.com/reel/DBKCH7rPVg1/?utm_source=ig_web_copy_link" },
+  { cat: "cctv", t: "Instalación y configuración de cámara PTZ - Chocolatera (Salinas)", d: "Instalación y configuración de cámara PTZ", img: img6, href: "https://www.instagram.com/reel/DAZZo8-MW20/?utm_source=ig_web_copy_link" },
 ];
 const cats = [
   { k: "all", l: "Todos" },
   { k: "cctv", l: "CCTV" },
   { k: "redes", l: "Redes" },
-  { k: "biometria", l: "Biometría" },
-  { k: "corporativo", l: "Corporativo" },
+  { k: "aire", l: "Aire Acondicionado" },
+  { k: "impresoras", l: "Impresoras" },
+  { k: "cerco", l: "Cerco Eléctrico" },
 ];
 
 export default function Proyectos() {
