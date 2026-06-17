@@ -3,12 +3,13 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
 
-interface Subcategoria { id: string; nombre: string; slug: string; categoriaId: string; }
+interface Subsubcategoria { id: string; nombre: string; slug: string; subcategoriaId: string; }
+interface Subcategoria { id: string; nombre: string; slug: string; categoriaId: string; subsubcategorias?: Subsubcategoria[]; }
 interface Categoria { id: string; nombre: string; slug: string; subcategorias?: Subcategoria[]; }
 interface ProductoImagen { id: string; path: string; orden: number; }
 interface Producto {
   id: string; nombre: string; marca: string; categoriaId: string;
-  categoria: Categoria; subcategoriaId?: string | null; descripcion: string; precio: number; descuento: number;
+  categoria: Categoria; subcategoriaId?: string | null; subsubcategoriaId?: string | null; descripcion: string; precio: number; descuento: number;
   destacado: boolean; stock: number; estado: "ACTIVO" | "INACTIVO"; imagenes: ProductoImagen[];
   contificoId?: string | null; contificoCode?: string | null; lastSyncedAt?: string | null;
 }
@@ -19,7 +20,8 @@ interface PreviewFile {
 }
 
 const defaultForm = {
-  nombre: "", marca: "", categoriaId: "", subcategoriaId: "" as string | null, descripcion: "",
+  nombre: "", marca: "", categoriaId: "", subcategoriaId: "" as string | null,
+  subsubcategoriaId: "" as string | null, descripcion: "",
   precio: 0, descuento: 0, destacado: false, stock: 0, estado: "ACTIVO" as Producto["estado"],
 };
 
@@ -60,7 +62,7 @@ export default function ProductosPage() {
 
   const fetchProductos = useCallback(async () => {
     setLoading(true);
-    const res = await fetch("/api/productos");
+    const res = await fetch("/api/productos?todos=1");
     const data = await res.json();
     setProductos(data.productos || []);
     setLoading(false);
@@ -82,7 +84,7 @@ export default function ProductosPage() {
 
   function openEdit(p: Producto) {
     setEditId(p.id);
-    setForm({ nombre: p.nombre, marca: p.marca, categoriaId: p.categoriaId, subcategoriaId: p.subcategoriaId ?? null, descripcion: p.descripcion, precio: Number(p.precio), descuento: p.descuento, destacado: p.destacado, stock: p.stock, estado: p.estado });
+    setForm({ nombre: p.nombre, marca: p.marca, categoriaId: p.categoriaId, subcategoriaId: p.subcategoriaId ?? null, subsubcategoriaId: p.subsubcategoriaId ?? null, descripcion: p.descripcion, precio: Number(p.precio), descuento: p.descuento, destacado: p.destacado, stock: p.stock, estado: p.estado });
     setPreviewFiles([]);
     setExistingImages(p.imagenes || []);
     setError("");
@@ -136,7 +138,7 @@ export default function ProductosPage() {
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, precio: Number(form.precio), descuento: Number(form.descuento), stock: Number(form.stock), subcategoriaId: form.subcategoriaId || null }),
+        body: JSON.stringify({ ...form, precio: Number(form.precio), descuento: Number(form.descuento), stock: Number(form.stock), subcategoriaId: form.subcategoriaId || null, subsubcategoriaId: form.subsubcategoriaId || null }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || "Error al guardar"); return; }
@@ -235,6 +237,7 @@ export default function ProductosPage() {
   function resetPage() { setCurrentPage(1); }
 
   const subcategoriasDisponibles = categorias.find(c => c.id === form.categoriaId)?.subcategorias ?? [];
+  const subsubcategoriasDisponibles = subcategoriasDisponibles.find(s => s.id === form.subcategoriaId)?.subsubcategorias ?? [];
 
   const totalImages = existingImages.length + previewFiles.length;
   const canAddMore = totalImages < 5;
@@ -403,11 +406,16 @@ export default function ProductosPage() {
                     <td style={{ padding: "0.75rem 1rem", fontSize: "0.875rem", color: "#475569" }}>{p.marca}</td>
                     <td style={{ padding: "0.75rem 1rem", fontSize: "0.875rem", color: "#475569" }}>
                       <div>{p.categoria?.nombre}</div>
-                      {p.subcategoriaId && (
-                        <div style={{ fontSize: "0.7rem", color: "#94a3b8", marginTop: "0.1rem" }}>
-                          {categorias.find(c => c.id === p.categoriaId)?.subcategorias?.find(s => s.id === p.subcategoriaId)?.nombre ?? "—"}
-                        </div>
-                      )}
+                      {p.subcategoriaId && (() => {
+                        const sub = categorias.find(c => c.id === p.categoriaId)?.subcategorias?.find(s => s.id === p.subcategoriaId);
+                        const subsub = sub?.subsubcategorias?.find(ss => ss.id === p.subsubcategoriaId);
+                        return (
+                          <>
+                            <div style={{ fontSize: "0.7rem", color: "#64748b", marginTop: "0.1rem" }}>{sub?.nombre ?? "—"}</div>
+                            {subsub && <div style={{ fontSize: "0.65rem", color: "#94a3b8", marginTop: "0.05rem" }}>↳ {subsub.nombre}</div>}
+                          </>
+                        );
+                      })()}
                     </td>
                     <td style={{ padding: "0.75rem 1rem", fontSize: "0.875rem", fontWeight: "700", color: "#0B2C5F" }}>${Number(p.precio).toFixed(2)}</td>
                     <td style={{ padding: "0.75rem 1rem", fontSize: "0.875rem" }}>
@@ -611,7 +619,7 @@ export default function ProductosPage() {
                   <select
                     style={inputStyle}
                     value={form.categoriaId}
-                    onChange={e => setForm(f => ({ ...f, categoriaId: e.target.value, subcategoriaId: null }))}
+                    onChange={e => setForm(f => ({ ...f, categoriaId: e.target.value, subcategoriaId: null, subsubcategoriaId: null }))}
                     required
                   >
                     <option value="">Seleccionar categoría...</option>
@@ -623,11 +631,29 @@ export default function ProductosPage() {
                   <select
                     style={{ ...inputStyle, color: form.subcategoriaId ? "#0f172a" : "#94a3b8" }}
                     value={form.subcategoriaId ?? ""}
-                    onChange={e => setForm(f => ({ ...f, subcategoriaId: e.target.value || null }))}
+                    onChange={e => setForm(f => ({ ...f, subcategoriaId: e.target.value || null, subsubcategoriaId: null }))}
                     disabled={!form.categoriaId || subcategoriasDisponibles.length === 0}
                   >
-                    <option value="">Sin subcategoría</option>
+                    <option value="">{!form.categoriaId ? "— Selecciona categoría primero —" : "Sin subcategoría"}</option>
                     {subcategoriasDisponibles.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
+                  </select>
+                </div>
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <label style={labelStyle}>Sub-Subcategoría <span style={{ fontWeight: 400, textTransform: "none", color: "#94a3b8" }}>(opcional)</span></label>
+                  <select
+                    style={{ ...inputStyle, color: form.subsubcategoriaId ? "#0f172a" : "#94a3b8" }}
+                    value={form.subsubcategoriaId ?? ""}
+                    onChange={e => setForm(f => ({ ...f, subsubcategoriaId: e.target.value || null }))}
+                    disabled={!form.subcategoriaId || subsubcategoriasDisponibles.length === 0}
+                  >
+                    <option value="">
+                      {!form.subcategoriaId
+                        ? "— Selecciona subcategoría primero —"
+                        : subsubcategoriasDisponibles.length === 0
+                        ? "— Esta subcategoría no tiene subsubcategorías —"
+                        : "Sin subsubcategoría"}
+                    </option>
+                    {subsubcategoriasDisponibles.map(ss => <option key={ss.id} value={ss.id}>{ss.nombre}</option>)}
                   </select>
                 </div>
                 <div style={{ gridColumn: "1 / -1" }}>

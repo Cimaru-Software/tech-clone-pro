@@ -4,12 +4,21 @@ export interface ProductoImagen {
   orden: number;
 }
 
+export interface Subsubcategoria {
+  id: string;
+  nombre: string;
+  slug: string;
+  orden: number;
+  subcategoriaId: string;
+}
+
 export interface Subcategoria {
   id: string;
   nombre: string;
   slug: string;
   orden: number;
   categoriaId: string;
+  subsubcategorias?: Subsubcategoria[];
 }
 
 export interface Categoria {
@@ -28,6 +37,8 @@ export interface Producto {
   categoria: Categoria;
   subcategoriaId?: string | null;
   subcategoria?: Subcategoria | null;
+  subsubcategoriaId?: string | null;
+  subsubcategoria?: Subsubcategoria | null;
   descripcion: string;
   precio: number;
   descuento: number;

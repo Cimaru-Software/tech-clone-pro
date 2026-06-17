@@ -8,6 +8,7 @@ const productoUpdateSchema = z.object({
   marca: z.string().min(1).optional(),
   categoriaId: z.string().min(1).optional(),
   subcategoriaId: z.string().optional().nullable(),
+  subsubcategoriaId: z.string().optional().nullable(),
   descripcion: z.string().min(1).optional(),
   precio: z.number().positive().optional(),
   descuento: z.number().min(0).max(100).optional(),
@@ -20,7 +21,7 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
   const { id } = await params;
   const producto = await prisma.producto.findUnique({
     where: { id },
-    include: { categoria: true, subcategoria: true, imagenes: { orderBy: { orden: "asc" } } },
+    include: { categoria: true, subcategoria: true, subsubcategoria: true, imagenes: { orderBy: { orden: "asc" } } },
   });
   if (!producto) return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 });
   return NextResponse.json({ producto });
@@ -38,7 +39,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const producto = await prisma.producto.update({
       where: { id },
       data,
-      include: { categoria: true, subcategoria: true, imagenes: true },
+      include: { categoria: true, subcategoria: true, subsubcategoria: true, imagenes: true },
     });
     return NextResponse.json({ producto });
   } catch (error) {

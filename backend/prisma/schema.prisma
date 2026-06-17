@@ -28,24 +28,38 @@ model Categoria {
 }
 
 model Subcategoria {
-  id          String     @id @default(cuid())
-  nombre      String
-  slug        String     @unique
-  orden       Int        @default(0)
-  categoriaId String
-  categoria   Categoria  @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
-  productos   Producto[]
-  createdAt   DateTime   @default(now())
+  id               String            @id @default(cuid())
+  nombre           String
+  slug             String            @unique
+  orden            Int               @default(0)
+  categoriaId      String
+  categoria        Categoria         @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
+  subsubcategorias Subsubcategoria[]
+  productos        Producto[]
+  createdAt        DateTime          @default(now())
+}
+
+model Subsubcategoria {
+  id             String       @id @default(cuid())
+  nombre         String
+  slug           String       @unique
+  orden          Int          @default(0)
+  subcategoriaId String
+  subcategoria   Subcategoria @relation(fields: [subcategoriaId], references: [id], onDelete: Cascade)
+  productos      Producto[]
+  createdAt      DateTime     @default(now())
 }
 
 model Producto {
-  id             String           @id @default(cuid())
-  nombre         String
-  marca          String
-  categoriaId    String
-  categoria      Categoria        @relation(fields: [categoriaId], references: [id])
-  subcategoriaId String?
-  subcategoria   Subcategoria?    @relation(fields: [subcategoriaId], references: [id])
+  id                String           @id @default(cuid())
+  nombre            String
+  marca             String
+  categoriaId       String
+  categoria         Categoria        @relation(fields: [categoriaId], references: [id])
+  subcategoriaId    String?
+  subcategoria      Subcategoria?    @relation(fields: [subcategoriaId], references: [id])
+  subsubcategoriaId String?
+  subsubcategoria   Subsubcategoria? @relation(fields: [subsubcategoriaId], references: [id])
   descripcion    String           @db.Text
   precio         Decimal          @db.Decimal(10, 2)
   descuento      Int              @default(0)

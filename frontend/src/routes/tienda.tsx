@@ -1,7 +1,7 @@
 import { Link, useNavigate, useSearchParams } from "@/lib/router";
 import { useEffect, useState, useMemo } from "react";
 import { ChevronRight, ChevronDown, SlidersHorizontal, Search, ShoppingCart, X } from "lucide-react";
-import type { Producto, Categoria } from "@/types/product";
+import type { Producto, Categoria, Subcategoria } from "@/types/product";
 import { useCart } from "@/context/CartContext";
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
@@ -62,14 +62,20 @@ interface CategoryFilterProps {
   categorias: Categoria[];
   selectedCat: string | null;
   selectedSub: string | null;
+  selectedSubsub: string | null;
   onSelectCat: (slug: string | null) => void;
   onSelectSub: (slug: string | null) => void;
+  onSelectSubsub: (slug: string | null) => void;
   onClose?: () => void;
 }
 
-function CategoryFilter({ categorias, selectedCat, selectedSub, onSelectCat, onSelectSub, onClose }: CategoryFilterProps) {
+function CategoryFilter({ categorias, selectedCat, selectedSub, selectedSubsub, onSelectCat, onSelectSub, onSelectSubsub, onClose }: CategoryFilterProps) {
   const [openCats, setOpenCats] = useState<Set<string>>(() => {
     if (selectedCat) return new Set([selectedCat]);
+    return new Set();
+  });
+  const [openSubs, setOpenSubs] = useState<Set<string>>(() => {
+    if (selectedSub) return new Set([selectedSub]);
     return new Set();
   });
 
@@ -82,13 +88,24 @@ function CategoryFilter({ categorias, selectedCat, selectedSub, onSelectCat, onS
     });
   };
 
+  const toggleSub = (slug: string) => {
+    setOpenSubs((prev) => {
+      const next = new Set(prev);
+      if (next.has(slug)) next.delete(slug);
+      else next.add(slug);
+      return next;
+    });
+  };
+
   const handleCatClick = (slug: string) => {
     if (selectedCat === slug && !selectedSub) {
       onSelectCat(null);
       onSelectSub(null);
+      onSelectSubsub(null);
     } else {
       onSelectCat(slug);
       onSelectSub(null);
+      onSelectSubsub(null);
       toggleCat(slug);
     }
     onClose?.();
@@ -96,10 +113,22 @@ function CategoryFilter({ categorias, selectedCat, selectedSub, onSelectCat, onS
 
   const handleSubClick = (catSlug: string, subSlug: string) => {
     onSelectCat(catSlug);
-    if (selectedSub === subSlug) {
+    if (selectedSub === subSlug && !selectedSubsub) {
       onSelectSub(null);
     } else {
       onSelectSub(subSlug);
+      onSelectSubsub(null);
+    }
+    onClose?.();
+  };
+
+  const handleSubsubClick = (catSlug: string, subSlug: string, subsubSlug: string) => {
+    onSelectCat(catSlug);
+    onSelectSub(subSlug);
+    if (selectedSubsub === subsubSlug) {
+      onSelectSubsub(null);
+    } else {
+      onSelectSubsub(subsubSlug);
     }
     onClose?.();
   };
@@ -108,7 +137,7 @@ function CategoryFilter({ categorias, selectedCat, selectedSub, onSelectCat, onS
     <ul className="space-y-0.5 text-sm">
       <li>
         <button
-          onClick={() => { onSelectCat(null); onSelectSub(null); onClose?.(); }}
+          onClick={() => { onSelectCat(null); onSelectSub(null); onSelectSubsub(null); onClose?.(); }}
           className={`w-full text-left px-2 py-1.5 rounded hover:bg-secondary transition-colors ${!selectedCat ? "text-brand-red font-bold" : ""}`}
         >
           Todas las categorías
@@ -139,16 +168,45 @@ function CategoryFilter({ categorias, selectedCat, selectedSub, onSelectCat, onS
             </div>
             {hasSubs && isOpen && (
               <ul className="ml-3 border-l border-border pl-2 space-y-0.5 mt-0.5 mb-1">
-                {c.subcategorias!.map((sub) => (
-                  <li key={sub.slug}>
-                    <button
-                      onClick={() => handleSubClick(c.slug, sub.slug)}
-                      className={`w-full text-left px-2 py-1 rounded hover:bg-secondary transition-colors text-xs ${selectedSub === sub.slug ? "text-brand-red font-bold" : "text-muted-foreground"}`}
-                    >
-                      {sub.nombre}
-                    </button>
-                  </li>
-                ))}
+                {c.subcategorias!.map((sub: Subcategoria) => {
+                  const hasSubsubs = sub.subsubcategorias && sub.subsubcategorias.length > 0;
+                  const isSubOpen = openSubs.has(sub.slug);
+                  const isSubActive = selectedSub === sub.slug;
+                  return (
+                    <li key={sub.slug}>
+                      <div className="flex items-center">
+                        <button
+                          onClick={() => handleSubClick(c.slug, sub.slug)}
+                          className={`flex-1 text-left px-2 py-1 rounded-l hover:bg-secondary transition-colors text-xs ${isSubActive && !selectedSubsub ? "text-brand-red font-bold" : "text-muted-foreground"}`}
+                        >
+                          {sub.nombre}
+                        </button>
+                        {hasSubsubs && (
+                          <button
+                            onClick={() => toggleSub(sub.slug)}
+                            className="px-1 py-1 rounded-r hover:bg-secondary transition-colors text-muted-foreground"
+                          >
+                            <ChevronDown className={`h-3 w-3 transition-transform ${isSubOpen ? "rotate-180" : ""}`} />
+                          </button>
+                        )}
+                      </div>
+                      {hasSubsubs && isSubOpen && (
+                        <ul className="ml-3 border-l border-border pl-2 space-y-0.5 mt-0.5 mb-1">
+                          {sub.subsubcategorias!.map((ss) => (
+                            <li key={ss.slug}>
+                              <button
+                                onClick={() => handleSubsubClick(c.slug, sub.slug, ss.slug)}
+                                className={`w-full text-left px-2 py-1 rounded hover:bg-secondary transition-colors text-xs ${selectedSubsub === ss.slug ? "text-brand-red font-bold" : "text-muted-foreground/70"}`}
+                              >
+                                {ss.nombre}
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </li>
@@ -162,6 +220,7 @@ export default function Tienda() {
   const [searchParams] = useSearchParams();
   const [selectedCat, setSelectedCat] = useState<string | null>(() => searchParams.get("cat"));
   const [selectedSub, setSelectedSub] = useState<string | null>(() => searchParams.get("sub"));
+  const [selectedSubsub, setSelectedSubsub] = useState<string | null>(() => searchParams.get("subsub"));
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [maxPrice, setMaxPrice] = useState(5000);
   const [sort, setSort] = useState("relevance");
@@ -213,7 +272,9 @@ export default function Tienda() {
 
   const filtered = useMemo(() => {
     let r = productos.filter((p) => Number(p.precio) * (1 - p.descuento / 100) <= maxPrice);
-    if (selectedSub) {
+    if (selectedSubsub) {
+      r = r.filter((p) => p.subsubcategoria?.slug === selectedSubsub);
+    } else if (selectedSub) {
       r = r.filter((p) => p.subcategoria?.slug === selectedSub);
     } else if (selectedCat) {
       r = r.filter((p) => p.categoria?.slug === selectedCat);
@@ -224,10 +285,10 @@ export default function Tienda() {
     if (sort === "price-desc") r = [...r].sort((a, b) => Number(b.precio) - Number(a.precio));
     if (sort === "descuento") r = [...r].sort((a, b) => b.descuento - a.descuento);
     return r;
-  }, [productos, selectedCat, selectedSub, selectedBrands, maxPrice, sort, search]);
+  }, [productos, selectedCat, selectedSub, selectedSubsub, selectedBrands, maxPrice, sort, search]);
 
   // Reset page when filters change
-  useEffect(() => { setPage(1); }, [selectedCat, selectedSub, selectedBrands, maxPrice, sort, search]);
+  useEffect(() => { setPage(1); }, [selectedCat, selectedSub, selectedSubsub, selectedBrands, maxPrice, sort, search]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginatedProducts = useMemo(
@@ -239,6 +300,14 @@ export default function Tienda() {
     setSelectedBrands((p) => p.includes(b) ? p.filter((x) => x !== b) : [...p, b]);
 
   const activeLabel = useMemo(() => {
+    if (selectedSubsub) {
+      for (const c of categorias) {
+        for (const s of c.subcategorias ?? []) {
+          const ss = s.subsubcategorias?.find((x) => x.slug === selectedSubsub);
+          if (ss) return `${c.nombre} › ${s.nombre} › ${ss.nombre}`;
+        }
+      }
+    }
     if (selectedSub) {
       for (const c of categorias) {
         const sub = c.subcategorias?.find((s) => s.slug === selectedSub);
@@ -249,7 +318,7 @@ export default function Tienda() {
       return categorias.find((c) => c.slug === selectedCat)?.nombre ?? null;
     }
     return null;
-  }, [selectedCat, selectedSub, categorias]);
+  }, [selectedCat, selectedSub, selectedSubsub, categorias]);
 
   const SidebarContent = ({ onClose }: { onClose?: () => void }) => (
     <div className="space-y-5">
@@ -261,8 +330,10 @@ export default function Tienda() {
           categorias={categorias}
           selectedCat={selectedCat}
           selectedSub={selectedSub}
+          selectedSubsub={selectedSubsub}
           onSelectCat={setSelectedCat}
           onSelectSub={setSelectedSub}
+          onSelectSubsub={setSelectedSubsub}
           onClose={onClose}
         />
       </div>
@@ -367,7 +438,7 @@ export default function Tienda() {
             </div>
             {activeLabel && (
               <button
-                onClick={() => { setSelectedCat(null); setSelectedSub(null); }}
+                onClick={() => { setSelectedCat(null); setSelectedSub(null); setSelectedSubsub(null); }}
                 className="flex items-center gap-1 bg-brand-blue/10 text-brand-blue text-xs font-semibold px-3 py-1.5 rounded-full hover:bg-brand-blue/20 transition-colors"
               >
                 {activeLabel} <X className="h-3 w-3" />

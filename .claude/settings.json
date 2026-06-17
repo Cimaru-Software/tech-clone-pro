@@ -39,7 +39,11 @@
       "Bash(curl --max-time 15 -s -H 'Authorization: 0iEoM0G84uKqvMacY7lfZaiuJZebATkLNVDsearPQNI' -H 'token: 907cec7a-a93c-493e-aa64-cd96fbd89f47' 'https://api.contifico.com/sistema/api/v2/movimiento-inventario/?format=json&page=1')",
       "Bash(curl --max-time 15 -s -w '\\\\nSTATUS:%{http_code}' -H 'Authorization: 0iEoM0G84uKqvMacY7lfZaiuJZebATkLNVDsearPQNI' -H 'token: 907cec7a-a93c-493e-aa64-cd96fbd89f47' 'https://api.contifico.com/sistema/api/v2/bodega/RYWb4x8wxtE2AbZ1/stock/?format=json&page=1')",
       "Bash(curl --max-time 15 -s -w '\\\\nSTATUS:%{http_code}' -H 'Authorization: 0iEoM0G84uKqvMacY7lfZaiuJZebATkLNVDsearPQNI' -H 'token: 907cec7a-a93c-493e-aa64-cd96fbd89f47' 'https://api.contifico.com/sistema/api/v2/bodega/RYWb4x8wxtE2AbZ1/productos/?format=json&page=1')",
-      "Bash(docker system *)"
+      "Bash(docker system *)",
+      "Bash(xargs -I {} sh -c 'echo \"=== {} ===\" && head -50 {}')",
+      "Bash(curl -s http://localhost:5173/)",
+      "Bash(curl -s \"http://localhost:3001/api/categorias\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); cats=d['categorias']; print\\(f'Total cats: {len\\(cats\\)}'\\); [print\\(f'  {c[\\\\\"nombre\\\\\"]}: {len\\(c[\\\\\"subcategorias\\\\\"]\\)} subs, subs con subsubs: {sum\\(1 for s in c[\\\\\"subcategorias\\\\\"] if s[\\\\\"subsubcategorias\\\\\"]\\)}'\\) for c in cats]\")"
     ]
   }
 }

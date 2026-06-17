@@ -8,7 +8,10 @@ export async function GET() {
     where: { orden: { gt: 0 } },
     orderBy: { orden: "asc" },
     include: {
-      subcategorias: { orderBy: { orden: "asc" } },
+      subcategorias: {
+        orderBy: { orden: "asc" },
+        include: { subsubcategorias: { orderBy: { orden: "asc" } } },
+      },
     },
   });
   return NextResponse.json({ categorias });

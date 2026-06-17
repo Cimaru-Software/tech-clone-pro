@@ -6,7 +6,7 @@ import {
 import { useState, useEffect, useRef } from "react";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
-import type { Categoria } from "@/types/product";
+import type { Categoria, Subcategoria } from "@/types/product";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,9 +35,11 @@ export function Header() {
   const [q, setQ] = useState("");
   const [megaOpen, setMegaOpen] = useState(false);
   const [megaActiveCat, setMegaActiveCat] = useState<string | null>(null);
+  const [megaActiveSub, setMegaActiveSub] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileCatOpen, setMobileCatOpen] = useState(false);
   const [mobileOpenCats, setMobileOpenCats] = useState<Set<string>>(new Set());
+  const [mobileOpenSubs, setMobileOpenSubs] = useState<Set<string>>(new Set());
   const [mobileUserOpen, setMobileUserOpen] = useState(false);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const navigate = useNavigate();
@@ -49,7 +51,11 @@ export function Header() {
       .then((d) => {
         const cats: Categoria[] = d.categorias || [];
         setCategorias(cats);
-        if (cats.length > 0) setMegaActiveCat(cats[0].slug);
+        if (cats.length > 0) {
+          setMegaActiveCat(cats[0].slug);
+          const firstSubs = cats[0].subcategorias;
+          if (firstSubs && firstSubs.length > 0) setMegaActiveSub(firstSubs[0].slug);
+        }
       })
       .catch(() => {});
   }, []);
@@ -79,6 +85,15 @@ export function Header() {
     });
   };
 
+  const toggleMobileSub = (slug: string) => {
+    setMobileOpenSubs((prev) => {
+      const next = new Set(prev);
+      if (next.has(slug)) next.delete(slug);
+      else next.add(slug);
+      return next;
+    });
+  };
+
   useEffect(() => {
     if (mobileOpen) document.body.style.overflow = "hidden";
     else document.body.style.overflow = "";
@@ -97,6 +112,7 @@ export function Header() {
   }, [megaOpen]);
 
   const activeCatData = categorias.find((c) => c.slug === megaActiveCat);
+  const activeSubData: Subcategoria | undefined = activeCatData?.subcategorias?.find((s) => s.slug === megaActiveSub);
 
   return (
     <header className="sticky top-0 z-40 bg-white shadow-sm">
@@ -248,14 +264,18 @@ export function Header() {
               <div
                 onMouseLeave={() => setMegaOpen(false)}
                 className="absolute left-0 top-full bg-white border shadow-card-hover z-50 rounded-b-md overflow-hidden flex"
-                style={{ minWidth: "580px" }}
+                style={{ minWidth: activeSubData?.subsubcategorias?.length ? "720px" : "560px" }}
               >
-                {/* Columna izquierda: categorías */}
-                <div className="w-56 border-r bg-slate-50 overflow-y-auto max-h-[420px]">
+                {/* Columna 1: categorías */}
+                <div className="w-52 border-r bg-slate-50 overflow-y-auto max-h-[440px] shrink-0">
                   {categorias.map((c) => (
                     <button
                       key={c.slug}
-                      onMouseEnter={() => setMegaActiveCat(c.slug)}
+                      onMouseEnter={() => {
+                        setMegaActiveCat(c.slug);
+                        const firstSub = c.subcategorias?.[0];
+                        setMegaActiveSub(firstSub?.slug ?? null);
+                      }}
                       onClick={() => {
                         navigate({ to: "/tienda", search: { cat: c.slug } as any });
                         setMegaOpen(false);
@@ -272,44 +292,85 @@ export function Header() {
                   ))}
                 </div>
 
-                {/* Columna derecha: subcategorías de la categoría activa */}
-                <div className="flex-1 p-4 max-h-[420px] overflow-y-auto">
-                  {activeCatData ? (
-                    <>
-                      <div className="text-xs font-bold text-brand-blue uppercase tracking-wider mb-3 border-b pb-2">
-                        {activeCatData.nombre}
-                      </div>
-                      {activeCatData.subcategorias && activeCatData.subcategorias.length > 0 ? (
-                        <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                          {activeCatData.subcategorias.map((s) => (
-                            <Link
+                {/* Columna 2: subcategorías */}
+                {activeCatData && (
+                  <div className="w-52 border-r overflow-y-auto max-h-[440px] shrink-0">
+                    <div className="px-4 py-2.5 text-xs font-bold text-brand-blue uppercase tracking-wider border-b bg-slate-50/70">
+                      {activeCatData.nombre}
+                    </div>
+                    {activeCatData.subcategorias && activeCatData.subcategorias.length > 0 ? (
+                      <>
+                        {activeCatData.subcategorias.map((s) => {
+                          const hasSubs = s.subsubcategorias && s.subsubcategorias.length > 0;
+                          return (
+                            <button
                               key={s.slug}
-                              to="/tienda"
-                              search={{ cat: activeCatData.slug, sub: s.slug } as any}
-                              onClick={() => setMegaOpen(false)}
-                              className="flex items-center gap-1.5 py-1.5 text-sm text-foreground hover:text-brand-red transition-colors"
+                              onMouseEnter={() => hasSubs ? setMegaActiveSub(s.slug) : setMegaActiveSub(null)}
+                              onClick={() => {
+                                navigate({ to: "/tienda", search: { cat: activeCatData.slug, sub: s.slug } as any });
+                                setMegaOpen(false);
+                              }}
+                              className={`w-full flex items-center justify-between px-4 py-2.5 text-sm border-b last:border-0 transition-colors text-left ${
+                                megaActiveSub === s.slug && hasSubs
+                                  ? "bg-brand-red/10 text-brand-red font-semibold"
+                                  : "hover:bg-secondary hover:text-brand-red"
+                              }`}
                             >
-                              <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
                               {s.nombre}
-                            </Link>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-sm text-muted-foreground">Sin subcategorías</div>
-                      )}
+                              {hasSubs && <ChevronRight className="h-3.5 w-3.5 shrink-0 opacity-60" />}
+                            </button>
+                          );
+                        })}
+                        <Link
+                          to="/tienda"
+                          search={{ cat: activeCatData.slug } as any}
+                          onClick={() => setMegaOpen(false)}
+                          className="flex items-center gap-1 px-4 py-2.5 text-xs font-bold text-brand-red hover:bg-secondary transition-colors border-t"
+                        >
+                          Ver todo <ChevronRight className="h-3 w-3" />
+                        </Link>
+                      </>
+                    ) : (
                       <Link
                         to="/tienda"
                         search={{ cat: activeCatData.slug } as any}
                         onClick={() => setMegaOpen(false)}
-                        className="inline-flex items-center gap-1 mt-4 text-xs font-bold text-brand-red hover:underline"
+                        className="flex items-center gap-1 px-4 py-2.5 text-sm text-brand-red font-semibold hover:bg-secondary transition-colors"
                       >
-                        Ver todo en {activeCatData.nombre} <ChevronRight className="h-3 w-3" />
+                        Ver productos <ChevronRight className="h-3 w-3" />
                       </Link>
-                    </>
-                  ) : (
-                    <div className="text-sm text-muted-foreground">Selecciona una categoría</div>
-                  )}
-                </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Columna 3: subsubcategorías */}
+                {activeSubData && activeSubData.subsubcategorias && activeSubData.subsubcategorias.length > 0 && (
+                  <div className="flex-1 overflow-y-auto max-h-[440px]">
+                    <div className="px-4 py-2.5 text-xs font-bold text-brand-blue uppercase tracking-wider border-b bg-slate-50/70">
+                      {activeSubData.nombre}
+                    </div>
+                    {activeSubData.subsubcategorias.map((ss) => (
+                      <Link
+                        key={ss.slug}
+                        to="/tienda"
+                        search={{ cat: megaActiveCat!, sub: activeSubData.slug, subsub: ss.slug } as any}
+                        onClick={() => setMegaOpen(false)}
+                        className="flex items-center gap-2 px-4 py-2.5 text-sm border-b last:border-0 hover:bg-secondary hover:text-brand-red transition-colors"
+                      >
+                        <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
+                        {ss.nombre}
+                      </Link>
+                    ))}
+                    <Link
+                      to="/tienda"
+                      search={{ cat: megaActiveCat!, sub: activeSubData.slug } as any}
+                      onClick={() => setMegaOpen(false)}
+                      className="flex items-center gap-1 px-4 py-2.5 text-xs font-bold text-brand-red hover:bg-secondary transition-colors border-t"
+                    >
+                      Ver todo en {activeSubData.nombre} <ChevronRight className="h-3 w-3" />
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -452,18 +513,49 @@ export function Header() {
                         {/* Subcategorías */}
                         {c.subcategorias && c.subcategorias.length > 0 && mobileOpenCats.has(c.slug) && (
                           <div className="bg-slate-50 border-b border-slate-100">
-                            {c.subcategorias.map((s) => (
-                              <Link
-                                key={s.slug}
-                                to="/tienda"
-                                search={{ cat: c.slug, sub: s.slug } as any}
-                                onClick={closeMobile}
-                                className="flex items-center gap-2 pl-12 pr-4 py-2 text-sm text-muted-foreground hover:text-brand-red hover:bg-secondary transition-colors border-b border-slate-100 last:border-0"
-                              >
-                                <ChevronRight className="h-3 w-3 shrink-0" />
-                                {s.nombre}
-                              </Link>
-                            ))}
+                            {c.subcategorias.map((s) => {
+                              const hasSubsub = s.subsubcategorias && s.subsubcategorias.length > 0;
+                              return (
+                                <div key={s.slug}>
+                                  <div className="flex items-stretch border-b border-slate-100 last:border-0">
+                                    <Link
+                                      to="/tienda"
+                                      search={{ cat: c.slug, sub: s.slug } as any}
+                                      onClick={closeMobile}
+                                      className="flex-1 flex items-center gap-2 pl-12 pr-2 py-2 text-sm text-muted-foreground hover:text-brand-red hover:bg-secondary transition-colors"
+                                    >
+                                      <ChevronRight className="h-3 w-3 shrink-0" />
+                                      {s.nombre}
+                                    </Link>
+                                    {hasSubsub && (
+                                      <button
+                                        onClick={() => toggleMobileSub(s.slug)}
+                                        className="px-3 hover:bg-secondary transition-colors text-muted-foreground"
+                                      >
+                                        <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${mobileOpenSubs.has(s.slug) ? "rotate-180" : ""}`} />
+                                      </button>
+                                    )}
+                                  </div>
+                                  {/* Subsubcategorías */}
+                                  {hasSubsub && mobileOpenSubs.has(s.slug) && (
+                                    <div className="bg-white border-b border-slate-100">
+                                      {s.subsubcategorias!.map((ss) => (
+                                        <Link
+                                          key={ss.slug}
+                                          to="/tienda"
+                                          search={{ cat: c.slug, sub: s.slug, subsub: ss.slug } as any}
+                                          onClick={closeMobile}
+                                          className="flex items-center gap-2 pl-16 pr-4 py-2 text-xs text-muted-foreground hover:text-brand-red hover:bg-secondary transition-colors border-b border-slate-100 last:border-0"
+                                        >
+                                          <ChevronRight className="h-3 w-3 shrink-0" />
+                                          {ss.nombre}
+                                        </Link>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
                       </div>
