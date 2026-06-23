@@ -16,6 +16,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+interface SearchSuggestion {
+  id: number | string;
+  nombre: string;
+  imagen?: string;
+  slug?: string;
+}
+
 const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
 
 const NAV_LINKS = [
@@ -42,6 +49,12 @@ export function Header() {
   const [mobileOpenSubs, setMobileOpenSubs] = useState<Set<string>>(new Set());
   const [mobileUserOpen, setMobileUserOpen] = useState(false);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const [suggestionsEmpty, setSuggestionsEmpty] = useState(false);
+  const searchDesktopRef = useRef<HTMLDivElement>(null);
+  const searchMobileRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const megaRef = useRef<HTMLDivElement>(null);
 
@@ -60,6 +73,44 @@ export function Header() {
       .catch(() => {});
   }, []);
 
+  useEffect(() => {
+    const trimmed = q.trim();
+    if (trimmed.length < 2) {
+      setSuggestions([]);
+      setSuggestionsOpen(false);
+      setSuggestionsEmpty(false);
+      return;
+    }
+    setSuggestionsLoading(true);
+    const timer = setTimeout(() => {
+      fetch(`${BACKEND}/api/productos?q=${encodeURIComponent(trimmed)}&limit=6`)
+        .then((r) => r.json())
+        .then((d) => {
+          const items: SearchSuggestion[] = d.productos || [];
+          setSuggestions(items);
+          setSuggestionsEmpty(items.length === 0);
+          setSuggestionsOpen(true);
+        })
+        .catch(() => {
+          setSuggestions([]);
+          setSuggestionsEmpty(true);
+          setSuggestionsOpen(true);
+        })
+        .finally(() => setSuggestionsLoading(false));
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [q]);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const inDesktop = searchDesktopRef.current?.contains(e.target as Node);
+      const inMobile = searchMobileRef.current?.contains(e.target as Node);
+      if (!inDesktop && !inMobile) setSuggestionsOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
   const handleLogout = async () => {
     await logout();
     closeMobile();
@@ -68,7 +119,14 @@ export function Header() {
 
   const onSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    setSuggestionsOpen(false);
     navigate({ to: "/tienda", search: { q } as any });
+  };
+
+  const goToSuggestion = (s: SearchSuggestion) => {
+    setSuggestionsOpen(false);
+    setQ(s.nombre);
+    navigate({ to: "/tienda", search: { q: s.nombre } as any });
   };
 
   const closeMobile = () => {
@@ -136,19 +194,57 @@ export function Header() {
           </Link>
 
           {/* Search */}
-          <form onSubmit={onSearch} className="flex-1 min-w-0 max-w-2xl mx-auto hidden sm:flex">
-            <div className="flex w-full bg-white rounded-lg overflow-hidden border border-slate-300 shadow-sm focus-within:border-brand-blue focus-within:ring-2 focus-within:ring-brand-blue/15 transition">
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Buscar laptops, cámaras, impresoras..."
-                className="flex-1 min-w-0 px-4 py-2.5 text-sm text-foreground outline-none"
-              />
-              <button className="bg-brand-red hover:bg-brand-red-dark px-5 grid place-items-center transition-colors shrink-0">
-                <Search className="h-5 w-5 text-white" />
-              </button>
-            </div>
-          </form>
+          <div ref={searchDesktopRef} className="flex-1 min-w-0 max-w-2xl mx-auto hidden sm:flex relative">
+            <form onSubmit={onSearch} className="w-full">
+              <div className="flex w-full bg-white rounded-lg overflow-hidden border border-slate-300 shadow-sm focus-within:border-brand-blue focus-within:ring-2 focus-within:ring-brand-blue/15 transition">
+                <input
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  onFocus={() => { if (suggestions.length > 0 || suggestionsEmpty) setSuggestionsOpen(true); }}
+                  placeholder="Buscar laptops, cámaras, impresoras..."
+                  className="flex-1 min-w-0 px-4 py-2.5 text-sm text-foreground outline-none"
+                  autoComplete="off"
+                />
+                <button className="bg-brand-red hover:bg-brand-red-dark px-5 grid place-items-center transition-colors shrink-0">
+                  <Search className="h-5 w-5 text-white" />
+                </button>
+              </div>
+            </form>
+            {suggestionsOpen && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-card-hover z-50 overflow-hidden">
+                {suggestionsLoading ? (
+                  <div className="px-4 py-3 text-sm text-muted-foreground">Buscando...</div>
+                ) : suggestionsEmpty ? (
+                  <div className="px-4 py-3 text-sm text-muted-foreground">No se encontraron productos para "<span className="font-semibold text-foreground">{q}</span>"</div>
+                ) : (
+                  <>
+                    {suggestions.map((s) => (
+                      <button
+                        key={s.id}
+                        onMouseDown={() => goToSuggestion(s)}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-secondary transition-colors text-left border-b border-slate-100 last:border-0"
+                      >
+                        {s.imagen ? (
+                          <img src={`${BACKEND}${s.imagen}`} alt={s.nombre} className="h-10 w-10 object-contain rounded shrink-0 bg-slate-50" />
+                        ) : (
+                          <div className="h-10 w-10 rounded shrink-0 bg-slate-100 grid place-items-center">
+                            <Search className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        )}
+                        <span className="truncate">{s.nombre}</span>
+                      </button>
+                    ))}
+                    <button
+                      onMouseDown={onSearch as any}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-brand-red hover:bg-secondary transition-colors border-t"
+                    >
+                      <Search className="h-4 w-4" /> Ver todo "{q}"
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Envío – desktop only */}
           <div className="hidden lg:flex items-center gap-1 text-xs shrink-0">
@@ -229,20 +325,56 @@ export function Header() {
         </div>
 
         {/* Mobile search row */}
-        <div className="sm:hidden border-t px-3 py-2">
+        <div className="sm:hidden border-t px-3 py-2 relative" ref={searchMobileRef}>
           <form onSubmit={onSearch}>
             <div className="flex bg-white rounded-lg overflow-hidden border border-slate-300 shadow-sm focus-within:border-brand-blue focus-within:ring-2 focus-within:ring-brand-blue/15 transition">
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
+                onFocus={() => { if (suggestions.length > 0 || suggestionsEmpty) setSuggestionsOpen(true); }}
                 placeholder="¿Qué estás buscando?"
                 className="flex-1 min-w-0 px-3 py-2 text-sm text-foreground outline-none"
+                autoComplete="off"
               />
               <button className="bg-brand-red hover:bg-brand-red-dark px-4 grid place-items-center transition-colors shrink-0">
                 <Search className="h-4 w-4 text-white" />
               </button>
             </div>
           </form>
+          {suggestionsOpen && (
+            <div className="absolute top-full left-3 right-3 bg-white border border-slate-200 rounded-lg shadow-card-hover z-50 overflow-hidden">
+              {suggestionsLoading ? (
+                <div className="px-4 py-3 text-sm text-muted-foreground">Buscando...</div>
+              ) : suggestionsEmpty ? (
+                <div className="px-4 py-3 text-sm text-muted-foreground">No se encontraron productos para "<span className="font-semibold text-foreground">{q}</span>"</div>
+              ) : (
+                <>
+                  {suggestions.map((s) => (
+                    <button
+                      key={s.id}
+                      onMouseDown={() => goToSuggestion(s)}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-secondary transition-colors text-left border-b border-slate-100 last:border-0"
+                    >
+                      {s.imagen ? (
+                        <img src={`${BACKEND}${s.imagen}`} alt={s.nombre} className="h-9 w-9 object-contain rounded shrink-0 bg-slate-50" />
+                      ) : (
+                        <div className="h-9 w-9 rounded shrink-0 bg-slate-100 grid place-items-center">
+                          <Search className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                      )}
+                      <span className="truncate">{s.nombre}</span>
+                    </button>
+                  ))}
+                  <button
+                    onMouseDown={onSearch as any}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-brand-red hover:bg-secondary transition-colors border-t"
+                  >
+                    <Search className="h-4 w-4" /> Ver todo "{q}"
+                  </button>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -389,14 +521,24 @@ export function Header() {
             ))}
           </nav>
 
-          <a
-            href="https://wa.me/593999999999"
-            target="_blank"
-            rel="noreferrer"
-            className="ml-auto flex items-center gap-2 bg-whatsapp text-white px-3 py-1.5 rounded text-sm font-semibold hover:opacity-90 transition-opacity"
-          >
-            <MessageCircle className="h-4 w-4" /> WhatsApp
-          </a>
+          <div className="ml-auto flex items-center gap-2">
+            <a
+              href="https://sistema.lacasadelcomputador.ec/consulta-orden"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1.5 bg-brand-blue text-white px-3 py-1.5 rounded text-sm font-semibold hover:opacity-90 transition-opacity"
+            >
+              <Package className="h-4 w-4" /> CONSULTA TU ORDEN
+            </a>
+            <a
+              href="https://wa.me/593999999999"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-2 bg-whatsapp text-white px-3 py-1.5 rounded text-sm font-semibold hover:opacity-90 transition-opacity"
+            >
+              <MessageCircle className="h-4 w-4" /> WhatsApp
+            </a>
+          </div>
         </div>
       </div>
 

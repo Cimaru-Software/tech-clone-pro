@@ -5,7 +5,7 @@ const locations = [
     name: "Principal",
     address: 'La Libertad, Av. 9 De Octubre Ignacio Guerra Esq. Edificio Ruiz, cerca de Almacenes Tía y Academia Naval "Capitán Leonardo Abad Astudillo".',
     schedule: "Lunes-Viernes 8:30-18:30\nSábado 9:00-15:00\nDomingo 9:00-15:00",
-    map: "https://maps.google.com/maps?q=La%20Libertad%20Av.%209%20De%20Octubre%20Ignacio%20Guerra%20Edificio%20Ruiz&t=&z=17&ie=UTF8&iwloc=&output=embed",
+    map: "https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d15947.2455964311!2d-80.9249914!3d-2.2245869!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x902e0f44a0de8c77%3A0x927eafe3e85fc882!2sLa%20Casa%20del%20Computador!5e0!3m2!1ses!2sec!4v1782185748661!5m2!1ses!2sec",
   },
   {
     name: "Sucursal",

@@ -6,7 +6,7 @@ import img3 from "@/assets/projects/3.png";
 import img4 from "@/assets/projects/4.png";
 import img5 from "@/assets/projects/5.png";
 import img6 from "@/assets/projects/6.png";
-import { Quote, ArrowRight } from "lucide-react";
+import { Quote, ArrowRight, ClipboardList, Pencil, FileText, Wrench, ShieldCheck } from "lucide-react";
 
 const projects = [
   { cat: "cctv", t: "Cámaras y paneles solares - Chocolatera (Salinas)", d: "Instalación de sistema de videovigilancia con energía renovable", img: img1, href: "https://www.facebook.com/share/r/1BGDbLW6y2/" },
@@ -91,10 +91,19 @@ export default function Proyectos() {
         <div className="container-x">
           <h2 className="text-3xl font-black text-brand-blue text-center mb-10">Nuestro proceso</h2>
           <div className="grid md:grid-cols-5 gap-2">
-            {["Levantamiento", "Diseño", "Cotización", "Ejecución", "Mantenimiento"].map((s, i) => (
-              <div key={s} className="bg-white p-5 rounded-lg text-center relative">
-                <div className="h-10 w-10 rounded-full bg-brand-red text-white grid place-items-center font-black mx-auto mb-2">{i + 1}</div>
-                <div className="font-bold text-sm">{s}</div>
+            {[
+              { label: "Levantamiento", Icon: ClipboardList },
+              { label: "Diseño", Icon: Pencil },
+              { label: "Cotización", Icon: FileText },
+              { label: "Ejecución", Icon: Wrench },
+              { label: "Mantenimiento", Icon: ShieldCheck },
+            ].map(({ label, Icon }, i) => (
+              <div key={label} className="bg-white p-5 rounded-lg text-center relative">
+                <div className="relative inline-flex items-center justify-center mb-3">
+                  <Icon className="h-14 w-14 text-brand-blue" />
+                  <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-brand-red text-white text-[10px] font-black grid place-items-center leading-none">{i + 1}</span>
+                </div>
+                <div className="font-bold text-sm">{label}</div>
               </div>
             ))}
           </div>
