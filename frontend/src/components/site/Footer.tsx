@@ -8,9 +8,9 @@ export function Footer() {
         <div className="col-span-2 md:col-span-1">
           <Link to="/" className="inline-flex mb-4" aria-label="LA CASA DEL COMPUTADOR">
             <img
-              src="/images/logo_bw.png"
+              src="/images/logo.png"
               alt="LA CASA DEL COMPUTADOR"
-              className="h-14 w-auto object-contain"
+              className="h-14 w-auto object-contain brightness-0 invert"
             />
           </Link>
           <p className="text-sm text-white/70 mb-4">Tecnología para tu vida. Más de 15 años brindando soluciones tecnológicas a empresas y hogares en Ecuador.</p>
@@ -76,9 +76,23 @@ export function Footer() {
         </div>
       </div>
       <div className="border-t border-white/10">
-        <div className="container-x py-4 text-xs text-white/60 flex flex-col md:flex-row gap-2 justify-between">
-          <span>© {new Date().getFullYear()} La Casa del Computador. Todos los derechos reservados.</span>
-          <span>Términos y condiciones · Política de privacidad · Garantías</span>
+        <div className="container-x py-4 text-xs text-white/60 flex flex-col gap-3">
+          <div className="flex flex-col md:flex-row gap-2 justify-between items-center text-center md:text-left">
+            <span>© {new Date().getFullYear()} La Casa del Computador. Todos los derechos reservados.</span>
+            <span>Términos y condiciones · Política de privacidad · Garantías</span>
+          </div>
+          <a
+            href="https://www.nivusoftware.com"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center justify-center gap-2 self-center text-sm text-white/80 hover:text-white transition-colors"
+            aria-label="Desarrollado por Nivusoftware"
+          >
+            <img src="/images/nube.png" alt="" aria-hidden="true" className="h-5 w-5 object-contain" />
+            <span>
+              Desarrollado por <span className="font-semibold">Nivusoftware</span>
+            </span>
+          </a>
         </div>
       </div>
     </footer>
