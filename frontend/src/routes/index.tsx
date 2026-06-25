@@ -84,6 +84,14 @@ interface CategoriaConImagen {
   orden: number;
 }
 
+interface GoogleReview {
+  author_name: string;
+  rating: number;
+  text: string;
+  relative_time_description: string;
+  profile_photo_url: string;
+}
+
 export default function Home() {
   const [featured, setFeatured] = useState<Producto[]>([]);
   const [offers, setOffers] = useState<Producto[]>([]);
@@ -91,6 +99,10 @@ export default function Home() {
   const [heroIndex, setHeroIndex] = useState(0);
   const [bannerPromo, setBannerPromo] = useState<string | null>(null);
   const [categorias, setCategorias] = useState<CategoriaConImagen[]>([]);
+  const [googleReviews, setGoogleReviews] = useState<GoogleReview[]>([]);
+  const [googleRating, setGoogleRating] = useState<number | null>(null);
+  const [googleRatingCount, setGoogleRatingCount] = useState<number | null>(null);
+  const [googleReviewsError, setGoogleReviewsError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`${BACKEND}/api/categorias`)
@@ -146,6 +158,27 @@ export default function Home() {
       .then((r) => r.json())
       .then((d) => { if (d.banner) setBannerPromo(`${BACKEND}${d.banner.path}`); })
       .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    fetch(`${BACKEND}/api/google-reviews`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (!active) return;
+        setGoogleReviews(d.reviews || []);
+        setGoogleRating(typeof d.rating === "number" ? d.rating : null);
+        setGoogleRatingCount(typeof d.userRatingCount === "number" ? d.userRatingCount : null);
+        setGoogleReviewsError(d.error || null);
+      })
+      .catch(() => {
+        if (!active) return;
+        setGoogleReviews([]);
+        setGoogleRating(null);
+        setGoogleRatingCount(null);
+        setGoogleReviewsError("No se pudo conectar con Google Places.");
+      });
+    return () => { active = false; };
   }, []);
 
   useEffect(() => {
@@ -357,6 +390,69 @@ export default function Home() {
                 <div className="text-[11px] md:text-xs text-muted-foreground mt-1">{s.s}</div>
               </Link>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* GOOGLE REVIEWS */}
+      <section className="bg-[#f6f8fc] py-12 md:py-16">
+        <div className="container-x text-center">
+          <div className="inline-flex items-center gap-2 rounded-full bg-white border px-4 py-2 text-xs font-semibold text-slate-600 shadow-sm">
+            <span className="text-lg leading-none">G</span>
+            <span>Reseñas verificadas de Google</span>
+          </div>
+          <h2 className="mt-5 text-3xl md:text-5xl font-black text-slate-900">Lo Que Dicen Nuestros Clientes</h2>
+          <p className="mt-3 text-slate-600 max-w-2xl mx-auto text-sm md:text-base">
+            Opiniones reales de clientes que confían en nosotros, directo desde Google Maps.
+          </p>
+        </div>
+
+        <div className="container-x mt-10">
+          {googleReviews.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+              {googleReviews.slice(0, 4).map((review, idx) => (
+                <article key={`${review.author_name}-${idx}`} className="bg-white rounded-3xl border border-slate-200 shadow-sm p-5 text-left min-h-[260px] flex flex-col">
+                  <div className="flex items-center justify-between">
+                    <div className="flex gap-0.5 text-amber-400 text-base">
+                      {"★★★★★".split("").map((s, i) => (
+                        <span key={i}>{s}</span>
+                      ))}
+                    </div>
+                    <span className="text-lg font-black text-slate-400">G</span>
+                  </div>
+                  <p className="mt-4 text-sm leading-6 text-slate-700 flex-1">“{review.text}”</p>
+                  <div className="mt-5 pt-4 border-t border-slate-100 flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-brand-blue text-white grid place-items-center font-bold overflow-hidden shrink-0">
+                      {review.profile_photo_url ? (
+                        <img src={review.profile_photo_url} alt={review.author_name} className="h-full w-full object-cover" />
+                      ) : (
+                        review.author_name.slice(0, 1).toUpperCase()
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-bold text-sm text-slate-900 truncate">{review.author_name}</div>
+                      <div className="text-xs text-slate-500">{review.relative_time_description}</div>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center text-sm text-slate-500">
+              Aún no hay reseñas disponibles.
+              {googleReviewsError ? <div className="mt-2 text-xs text-rose-500">{googleReviewsError}</div> : null}
+            </div>
+          )}
+
+          <div className="mt-10 flex justify-center">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-8 py-6 text-center min-w-[280px]">
+              <div className="text-xs font-bold tracking-[0.2em] text-slate-500">RESEÑAS DE GOOGLE</div>
+              <div className="mt-3 flex justify-center gap-1 text-amber-400 text-2xl">★★★★★</div>
+              <div className="mt-2 text-4xl font-black text-slate-900">{googleRating ? googleRating.toFixed(1) : "5.0"}</div>
+              <div className="mt-2 text-sm text-slate-500">
+                Basado en {googleRatingCount ?? googleReviews.length ?? 0} reseñas verificadas
+              </div>
+            </div>
           </div>
         </div>
       </section>

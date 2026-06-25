@@ -43,7 +43,10 @@
       "Bash(xargs -I {} sh -c 'echo \"=== {} ===\" && head -50 {}')",
       "Bash(curl -s http://localhost:5173/)",
       "Bash(curl -s \"http://localhost:3001/api/categorias\")",
-      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); cats=d['categorias']; print\\(f'Total cats: {len\\(cats\\)}'\\); [print\\(f'  {c[\\\\\"nombre\\\\\"]}: {len\\(c[\\\\\"subcategorias\\\\\"]\\)} subs, subs con subsubs: {sum\\(1 for s in c[\\\\\"subcategorias\\\\\"] if s[\\\\\"subsubcategorias\\\\\"]\\)}'\\) for c in cats]\")"
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); cats=d['categorias']; print\\(f'Total cats: {len\\(cats\\)}'\\); [print\\(f'  {c[\\\\\"nombre\\\\\"]}: {len\\(c[\\\\\"subcategorias\\\\\"]\\)} subs, subs con subsubs: {sum\\(1 for s in c[\\\\\"subcategorias\\\\\"] if s[\\\\\"subsubcategorias\\\\\"]\\)}'\\) for c in cats]\")",
+      "Bash(ssh -o StrictHostKeyChecking=no -p 22 root@82.39.109.62 \"cat /etc/nginx/sites-available/casadelcomputador\")",
+      "Bash(sshpass -p 'wIx5RFKUZRo0prwSJygR' ssh -o StrictHostKeyChecking=no -o PreferredAuthentications=password -p 22 root@82.39.109.62 \"cat /etc/nginx/sites-available/casadelcomputador\")",
+      "Bash(sshpass -p wIx5RFKUZRo0prwSJygR ssh -o StrictHostKeyChecking=no -o PreferredAuthentications=password root@82.39.109.62 ' *)"
     ]
   }
 }
