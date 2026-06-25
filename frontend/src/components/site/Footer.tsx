@@ -1,5 +1,5 @@
 import { Link } from "@/lib/router";
-import { Facebook, Instagram, Phone, MapPin, Linkedin } from "lucide-react";
+import { Cloud, Facebook, Instagram, Phone, MapPin, Linkedin } from "lucide-react";
 
 export function Footer() {
   return (
@@ -88,7 +88,7 @@ export function Footer() {
             className="inline-flex items-center justify-center gap-2 self-center text-sm text-white/80 hover:text-white transition-colors"
             aria-label="Desarrollado por Nivusoftware"
           >
-            <img src="/images/nube.png" alt="" aria-hidden="true" className="h-5 w-5 object-contain" />
+            <Cloud aria-hidden="true" className="h-5 w-5" />
             <span>
               Desarrollado por <span className="font-semibold">Nivusoftware</span>
             </span>
