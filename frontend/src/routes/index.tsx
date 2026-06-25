@@ -285,7 +285,7 @@ export default function Home() {
           {[
             { icon: Truck, t: "Envío nacional", s: "A todo Ecuador" },
             { icon: ShieldCheck, t: "Garantía oficial", s: "Productos originales" },
-            { icon: CreditCard, t: "12 cuotas" },
+            { icon: CreditCard, t: "12 cuotas", s: "Pago diferido" },
             { icon: Headphones, t: "Soporte 24/7", s: "Servicio técnico" },
           ].map((b) => (
             <div key={b.t} className="flex items-center gap-2 sm:gap-3">
