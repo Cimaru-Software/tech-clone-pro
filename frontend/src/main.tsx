@@ -12,8 +12,8 @@ import Contacto from "@/routes/contacto";
 import LoginPage from "@/routes/login";
 import RegistroPage from "@/routes/registro";
 import Checkout from "@/routes/checkout";
-import MiCuentaPage from "@/routes/mi-cuenta";
-import MisPedidosPage from "@/routes/mi-cuenta/pedidos";
+import PerfilPage from "@/routes/perfil";
+import MisPedidosPage from "@/routes/mis-pedidos";
 import ProductoDetalle from "@/routes/producto/$id";
 import ProductRedirect from "@/routes/product/$id";
 import Noticias from "@/routes/noticias/index";
@@ -35,13 +35,14 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route path="login" element={<LoginPage />} />
           <Route path="registro" element={<RegistroPage />} />
           <Route path="checkout" element={<Checkout />} />
-          <Route path="mi-cuenta" element={<MiCuentaPage />} />
-          <Route path="mi-cuenta/pedidos" element={<MisPedidosPage />} />
+          <Route path="perfil" element={<PerfilPage />} />
+          <Route path="mis-pedidos" element={<MisPedidosPage />} />
           <Route path="producto/:id" element={<ProductoDetalle />} />
           <Route path="product/:id" element={<ProductRedirect />} />
           <Route path="noticias" element={<Noticias />} />
           <Route path="noticias/:slug" element={<NoticiaDetalle />} />
-          <Route path="mi-cuenta/" element={<Navigate to="/mi-cuenta" replace />} />
+          <Route path="mi-cuenta" element={<Navigate to="/perfil" replace />} />
+          <Route path="mi-cuenta/pedidos" element={<Navigate to="/mis-pedidos" replace />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>

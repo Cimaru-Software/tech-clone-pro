@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { orderService } from "@/services/orderService";
 import { CreatePedidoDto, Pedido } from "@/types";
 
-export function useMyOrders() {
+export function useMyOrders(enabled = true) {
   const [data, setData] = useState<Pedido[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -12,6 +12,12 @@ export function useMyOrders() {
   }, []);
 
   useEffect(() => {
+    if (!enabled) {
+      setIsLoading(false);
+      setData([]);
+      return;
+    }
+
     let active = true;
 
     async function load() {
@@ -34,7 +40,7 @@ export function useMyOrders() {
       window.clearInterval(interval);
       window.removeEventListener("focus", load);
     };
-  }, []);
+  }, [enabled]);
 
   return { data, isLoading, refetch };
 }

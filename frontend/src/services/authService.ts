@@ -11,4 +11,8 @@ export const authService = {
     apiFetch<AuthResponse>("/api/auth/cliente/login", { method: "POST", body: JSON.stringify(data) }),
   logout: () => apiFetch<{ ok: boolean }>("/api/auth/cliente/logout", { method: "POST" }),
   me: () => apiFetch<MeResponse>("/api/me"),
+  updateProfile: (data: { nombre?: string; apellido?: string; telefono?: string; direccion?: string; ciudad?: string }) =>
+    apiFetch<{ ok: boolean; cliente: Cliente }>("/api/me", { method: "PATCH", body: JSON.stringify(data) }),
+  updatePassword: (data: { passwordActual: string; passwordNueva: string }) =>
+    apiFetch<{ ok: boolean; message: string }>("/api/me", { method: "PATCH", body: JSON.stringify(data) }),
 };

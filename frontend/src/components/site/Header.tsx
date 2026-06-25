@@ -294,10 +294,10 @@ export function Header() {
                     <span className="block truncate text-xs font-normal text-muted-foreground">{cliente.email}</span>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onSelect={() => navigate({ to: "/mi-cuenta" })} className="cursor-pointer rounded-md px-3 py-2.5">
+                  <DropdownMenuItem onSelect={() => navigate({ to: "/perfil" })} className="cursor-pointer rounded-md px-3 py-2.5">
                     <User className="h-4 w-4 text-brand-blue" /> Mi perfil
                   </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => navigate({ to: "/mi-cuenta/pedidos" })} className="cursor-pointer rounded-md px-3 py-2.5">
+                  <DropdownMenuItem onSelect={() => navigate({ to: "/mis-pedidos" })} className="cursor-pointer rounded-md px-3 py-2.5">
                     <Package className="h-4 w-4 text-brand-blue" /> Mis pedidos
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
@@ -576,10 +576,10 @@ export function Header() {
                   </button>
                   {mobileUserOpen && (
                     <div className="mt-2 ml-13 border-t pt-2 space-y-1">
-                      <Link to="/mi-cuenta" onClick={closeMobile} className="flex items-center gap-2 px-2 py-2 text-sm rounded-md hover:bg-secondary transition-colors">
+                      <Link to="/perfil" onClick={closeMobile} className="flex items-center gap-2 px-2 py-2 text-sm rounded-md hover:bg-secondary transition-colors">
                         <User className="h-4 w-4 text-brand-blue" /> Mi perfil
                       </Link>
-                      <Link to="/mi-cuenta/pedidos" onClick={closeMobile} className="flex items-center gap-2 px-2 py-2 text-sm rounded-md hover:bg-secondary transition-colors">
+                      <Link to="/mis-pedidos" onClick={closeMobile} className="flex items-center gap-2 px-2 py-2 text-sm rounded-md hover:bg-secondary transition-colors">
                         <Package className="h-4 w-4 text-brand-blue" /> Mis pedidos
                       </Link>
                     </div>
