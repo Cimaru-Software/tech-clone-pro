@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Producto } from "@/types/product";
+import { gaAddToCart } from "@/lib/analytics";
 
 export type CartItem = {
   id: string;
@@ -106,6 +107,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       if (existing) return prev.map((i) => i.id === p.id ? { ...i, qty: i.qty + qty } : i);
       return [...prev, item];
     });
+    gaAddToCart({ item_id: item.id, item_name: item.nombre, item_brand: item.marca, price: item.precio, quantity: qty });
     setOpen(true);
   };
 

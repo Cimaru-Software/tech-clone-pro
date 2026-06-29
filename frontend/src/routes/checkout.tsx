@@ -2,6 +2,7 @@ import { Link } from "@/lib/router";
 import { useEffect, useRef, useState } from "react";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { gaPurchase } from "@/lib/analytics";
 import { CheckCircle2, ChevronRight, Lock, Truck, CreditCard, Upload, Loader2 } from "lucide-react";
 
 declare global {
@@ -128,6 +129,11 @@ export default function Checkout() {
         });
         const result = await res.json();
         if (!res.ok) throw new Error(result.error || "No se pudo registrar la compra");
+        gaPurchase(
+          result.compra.id,
+          items.map(i => ({ item_id: i.id, item_name: i.nombre, item_brand: i.marca, price: itemPrice(i), quantity: i.qty })),
+          total
+        );
         setPurchaseId(result.compra.id);
         setPaidByCard(true);
         setStep(4);
@@ -172,6 +178,11 @@ export default function Checkout() {
       });
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || "No se pudo registrar la compra");
+      gaPurchase(
+        result.compra.id,
+        items.map(i => ({ item_id: i.id, item_name: i.nombre, item_brand: i.marca, price: itemPrice(i), quantity: i.qty })),
+        total
+      );
       setPurchaseId(result.compra.id);
       setStep(4);
       clear();

@@ -1,6 +1,7 @@
 import { Link } from "@/lib/router";
 import { useCart } from "@/context/CartContext";
 import { X, Trash2, Plus, Minus, ShoppingBag } from "lucide-react";
+import { gaBeginCheckout } from "@/lib/analytics";
 
 export function CartDrawer() {
   const { items, open, setOpen, remove, setQty, subtotal } = useCart();
@@ -46,7 +47,16 @@ export function CartDrawer() {
           <div className="border-t p-4 space-y-3">
             <div className="flex justify-between text-sm"><span>Subtotal</span><span className="font-bold">${subtotal.toFixed(2)}</span></div>
             <div className="text-xs text-muted-foreground">El envío y los impuestos se calculan en el checkout</div>
-            <Link to="/checkout" onClick={() => setOpen(false)} className="block bg-brand-red hover:bg-brand-red-dark text-white text-center font-bold py-3 rounded">
+            <Link
+              to="/checkout"
+              onClick={() => {
+                setOpen(false);
+                gaBeginCheckout(
+                  items.map(i => ({ item_id: i.id, item_name: i.nombre, item_brand: i.marca, price: i.precio, quantity: i.qty })),
+                  subtotal
+                );
+              }}
+              className="block bg-brand-red hover:bg-brand-red-dark text-white text-center font-bold py-3 rounded">
               Proceder al pago
             </Link>
             <Link to="/tienda" onClick={() => setOpen(false)} className="block text-center text-sm text-brand-blue hover:underline">Seguir comprando</Link>
