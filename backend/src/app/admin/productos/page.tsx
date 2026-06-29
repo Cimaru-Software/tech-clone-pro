@@ -14,6 +14,14 @@ interface Producto {
   contificoId?: string | null; contificoCode?: string | null; lastSyncedAt?: string | null;
 }
 
+interface Serial {
+  id: string;
+  serial: string;
+  estado: string;
+  createdAt: string;
+  itemCompra: { compraId: string; compra: { createdAt: string } } | null;
+}
+
 interface PreviewFile {
   file: File;
   preview: string;
@@ -59,6 +67,10 @@ export default function ProductosPage() {
   const [existingImages, setExistingImages] = useState<ProductoImagen[]>([]);
   const [deletingImageId, setDeletingImageId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Seriales
+  const [serialesModal, setSerialesModal] = useState<{ producto: Producto; seriales: Serial[] } | null>(null);
+  const [loadingSeriales, setLoadingSeriales] = useState(false);
 
   const fetchProductos = useCallback(async () => {
     setLoading(true);
@@ -184,6 +196,15 @@ export default function ProductosPage() {
       setSyncing(false);
       setSyncProgress(prev => prev?.fase !== "completo" ? { fase: "error", mensaje: "Error de conexión con el servidor" } : prev);
     };
+  }
+
+  async function openSeriales(p: Producto) {
+    setLoadingSeriales(true);
+    setSerialesModal({ producto: p, seriales: [] });
+    const res = await fetch(`/api/productos/${p.id}/seriales`);
+    const data = await res.json();
+    setSerialesModal({ producto: p, seriales: data.seriales || [] });
+    setLoadingSeriales(false);
   }
 
   async function handleDelete(id: string) {
@@ -431,8 +452,11 @@ export default function ProductosPage() {
                       </span>
                     </td>
                     <td style={{ padding: "0.75rem 1rem" }}>
-                      <div style={{ display: "flex", gap: "0.4rem" }}>
+                      <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
                         <button onClick={() => openEdit(p)} style={{ background: "#eff6ff", color: "#1d4ed8", border: "none", borderRadius: "7px", padding: "0.4rem 0.8rem", fontSize: "0.75rem", cursor: "pointer", fontWeight: "600" }}>Editar</button>
+                        {p.contificoId && (
+                          <button onClick={() => openSeriales(p)} style={{ background: "#f0fdf4", color: "#166534", border: "none", borderRadius: "7px", padding: "0.4rem 0.8rem", fontSize: "0.75rem", cursor: "pointer", fontWeight: "600" }}>Seriales</button>
+                        )}
                         <button onClick={() => handleDelete(p.id)} style={{ background: "#fef2f2", color: "#dc2626", border: "none", borderRadius: "7px", padding: "0.4rem 0.8rem", fontSize: "0.75rem", cursor: "pointer", fontWeight: "600" }}>Eliminar</button>
                       </div>
                     </td>
@@ -586,6 +610,98 @@ export default function ProductosPage() {
                 Cerrar
               </button>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Seriales Modal */}
+      {serialesModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.65)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 60, padding: "1rem" }}>
+          <div style={{ background: "white", borderRadius: "16px", width: "100%", maxWidth: "640px", maxHeight: "85vh", display: "flex", flexDirection: "column", boxShadow: "0 25px 60px rgba(0,0,0,0.3)" }}>
+            {/* Header */}
+            <div style={{ padding: "1.25rem 1.5rem", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", borderRadius: "16px 16px 0 0" }}>
+              <div>
+                <h2 style={{ fontSize: "1.1rem", fontWeight: "700", color: "#0f172a", margin: 0 }}>Seriales — {serialesModal.producto.nombre}</h2>
+                <p style={{ color: "#64748b", fontSize: "0.8rem", margin: "0.2rem 0 0" }}>
+                  {loadingSeriales ? "Cargando..." : `${serialesModal.seriales.length} serial${serialesModal.seriales.length !== 1 ? "es" : ""} registrados`}
+                </p>
+              </div>
+              <button onClick={() => setSerialesModal(null)} style={{ background: "#f1f5f9", border: "none", borderRadius: "8px", width: "34px", height: "34px", fontSize: "1.2rem", cursor: "pointer", color: "#475569", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+            </div>
+
+            {/* Resumen */}
+            {!loadingSeriales && serialesModal.seriales.length > 0 && (
+              <div style={{ padding: "1rem 1.5rem", borderBottom: "1px solid #f1f5f9", display: "flex", gap: "1rem" }}>
+                {[
+                  { label: "Disponibles", valor: serialesModal.seriales.filter(s => s.estado === "disponible").length, bg: "#dcfce7", color: "#166534" },
+                  { label: "Vendidos", valor: serialesModal.seriales.filter(s => s.estado === "vendido").length, bg: "#fee2e2", color: "#991b1b" },
+                ].map(({ label, valor, bg, color }) => (
+                  <div key={label} style={{ background: bg, borderRadius: "10px", padding: "0.65rem 1.25rem", display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                    <span style={{ fontSize: "1.4rem", fontWeight: "800", color }}>{valor}</span>
+                    <span style={{ fontSize: "0.75rem", fontWeight: "600", color }}>{label}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Lista */}
+            <div style={{ overflowY: "auto", flex: 1 }}>
+              {loadingSeriales ? (
+                <div style={{ textAlign: "center", padding: "3rem", color: "#94a3b8" }}>Cargando seriales...</div>
+              ) : serialesModal.seriales.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "3rem", color: "#94a3b8" }}>
+                  <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>📋</div>
+                  <div style={{ fontWeight: "600" }}>Sin seriales registrados</div>
+                  <div style={{ fontSize: "0.8rem", marginTop: "0.25rem" }}>Sincroniza con Contífico para importarlos</div>
+                </div>
+              ) : (
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr style={{ background: "#f8fafc", position: "sticky", top: 0 }}>
+                      {["Serial", "Estado", "Importado", "Compra"].map(h => (
+                        <th key={h} style={{ textAlign: "left", padding: "0.65rem 1.5rem", fontSize: "0.68rem", fontWeight: "700", color: "#64748b", textTransform: "uppercase" as const, letterSpacing: "0.05em", borderBottom: "1px solid #e2e8f0" }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {serialesModal.seriales.map(s => (
+                      <tr key={s.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                        <td style={{ padding: "0.75rem 1.5rem", fontFamily: "monospace", fontSize: "0.85rem", fontWeight: "600", color: "#0f172a" }}>{s.serial}</td>
+                        <td style={{ padding: "0.75rem 1.5rem" }}>
+                          <span style={{
+                            background: s.estado === "disponible" ? "#dcfce7" : "#fee2e2",
+                            color: s.estado === "disponible" ? "#166534" : "#991b1b",
+                            padding: "0.2rem 0.6rem", borderRadius: "999px",
+                            fontSize: "0.7rem", fontWeight: "700", textTransform: "uppercase" as const,
+                          }}>
+                            {s.estado === "disponible" ? "Disponible" : "Vendido"}
+                          </span>
+                        </td>
+                        <td style={{ padding: "0.75rem 1.5rem", fontSize: "0.8rem", color: "#64748b" }}>
+                          {new Date(s.createdAt).toLocaleDateString("es-EC", { day: "2-digit", month: "short", year: "numeric" })}
+                        </td>
+                        <td style={{ padding: "0.75rem 1.5rem", fontSize: "0.8rem" }}>
+                          {s.itemCompra ? (
+                            <span style={{ color: "#0B2C5F", fontWeight: "600", fontFamily: "monospace", fontSize: "0.75rem" }}>
+                              #{s.itemCompra.compraId.slice(-8).toUpperCase()}
+                            </span>
+                          ) : (
+                            <span style={{ color: "#cbd5e1" }}>—</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div style={{ padding: "1rem 1.5rem", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "flex-end", borderRadius: "0 0 16px 16px" }}>
+              <button onClick={() => setSerialesModal(null)} style={{ background: "#0B2C5F", color: "white", border: "none", borderRadius: "9px", padding: "0.65rem 1.5rem", fontWeight: "700", cursor: "pointer", fontSize: "0.875rem" }}>
+                Cerrar
+              </button>
+            </div>
           </div>
         </div>
       )}

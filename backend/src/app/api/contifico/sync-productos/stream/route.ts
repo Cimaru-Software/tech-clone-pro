@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyAdminToken } from "@/lib/auth";
-import { getProductos } from "@/lib/contifico";
+import { getProductos, getSeriales } from "@/lib/contifico";
 
 const BATCH_SIZE = 10;
 
@@ -112,12 +112,16 @@ export async function GET(request: NextRequest) {
           });
         }
 
+        // Sincronizar seriales
+        send({ fase: "procesando", mensaje: "Sincronizando seriales desde Contífico..." });
+        const serialesSync = await sincronizarSeriales();
+
         // Guardar log
         await prisma.contificoSyncLog.create({
           data: {
             tipo: "productos",
             estado: errores === 0 ? "ok" : "parcial",
-            mensaje: `Sincronizados: ${sincronizados}, Omitidos: ${omitidos}, Errores: ${errores}`,
+            mensaje: `Sincronizados: ${sincronizados}, Omitidos: ${omitidos}, Errores: ${errores}, Seriales: ${serialesSync.sincronizados}`,
             detalle: detallesError.length ? detallesError.join("\n") : null,
           },
         });
@@ -129,7 +133,8 @@ export async function GET(request: NextRequest) {
           sincronizados,
           omitidos,
           errores,
-          mensaje: "Sincronización completada",
+          seriales: serialesSync.sincronizados,
+          mensaje: `Sincronización completada. ${serialesSync.nuevos} seriales nuevos (${serialesSync.sincronizados} en Contífico).`,
         });
       } catch (err) {
         send({
@@ -149,6 +154,37 @@ export async function GET(request: NextRequest) {
       Connection: "keep-alive",
     },
   });
+}
+
+async function sincronizarSeriales() {
+  const serialesContifico = await getSeriales();
+  let nuevos = 0;
+
+  for (const s of serialesContifico) {
+    const producto = await prisma.producto.findUnique({
+      where: { contificoId: s.productoId },
+      select: { id: true },
+    });
+    if (!producto) continue;
+
+    // Solo crear si no existe — nunca pisar el estado de uno ya asignado a una compra
+    const existe = await prisma.serialProducto.findUnique({
+      where: { contificoProductoId_serial: { contificoProductoId: s.productoId, serial: s.serial } },
+    });
+    if (existe) continue;
+
+    await prisma.serialProducto.create({
+      data: {
+        serial: s.serial,
+        contificoProductoId: s.productoId,
+        productoId: producto.id,
+        estado: "disponible",
+      },
+    });
+    nuevos++;
+  }
+
+  return { sincronizados: serialesContifico.length, nuevos };
 }
 
 async function getOrCreateCategoriaDefault(): Promise<string> {

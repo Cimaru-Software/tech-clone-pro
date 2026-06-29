@@ -63,6 +63,7 @@ export interface ContificoDocumentoDetalle {
   base_cero: number;
   base_gravable: number;
   base_no_gravable: number;
+  descripcion?: string;
 }
 
 export interface ContificoDocumento {
@@ -242,6 +243,53 @@ export async function crearCobro(
   return res.json();
 }
 
+export interface ContificoSerial {
+  productoId: string;
+  serial: string;
+}
+
+// Devuelve los seriales que entraron a la bodega ecommerce mediante movimientos ING.
+// Solo ING de la bodega ecommerce nos interesan — los EGR (ventas) los gestiona
+// nuestro sistema internamente al asignar el serial a un ItemCompra aprobado.
+export async function getSeriales(): Promise<ContificoSerial[]> {
+  const bodegaId = process.env.CONTIFICO_BODEGA_ID;
+  if (!bodegaId) throw new Error("CONTIFICO_BODEGA_ID no configurado");
+
+  const seriales: ContificoSerial[] = [];
+  let page = 1;
+
+  while (true) {
+    const res = await fetch(
+      `${BASE_URL_V2}/movimiento-inventario/?format=json&bodega_id=${bodegaId}&tipo=ING&page=${page}`,
+      { headers: headers("sync"), cache: "no-store" }
+    );
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Contífico getSeriales: ${res.status} ${text}`);
+    }
+    const raw = await res.text();
+    const data = JSON.parse(raw.split("\n")[0]);
+    const results: Array<{ tipo: string; detalles: Array<{ producto_id: string; serie: string | null }> }> =
+      data.results ?? [];
+
+    for (const mov of results) {
+      for (const det of mov.detalles ?? []) {
+        if (det.serie) {
+          seriales.push({ productoId: det.producto_id, serial: det.serie });
+        }
+      }
+    }
+
+    if (data.next) {
+      page++;
+    } else {
+      break;
+    }
+  }
+
+  return seriales;
+}
+
 export function stockTotal(bodegas: ContificoStock[]): number {
   const bodegaId = process.env.CONTIFICO_BODEGA_ID;
   const fuente = bodegaId
@@ -263,6 +311,7 @@ export function buildDocumentoFromPedido(params: {
     cantidad: number;
     precio: number;
     ivaPorc: number;
+    descripcion?: string;
   }>;
 }): ContificoDocumento {
   const pos = process.env.CONTIFICO_BILLING_POS_ID || process.env.CONTIFICO_BILLING_API_TOKEN;
@@ -286,6 +335,7 @@ export function buildDocumentoFromPedido(params: {
       base_cero: con_iva ? 0 : base,
       base_gravable: con_iva ? base : 0,
       base_no_gravable: 0,
+      ...(item.descripcion ? { descripcion: item.descripcion } : {}),
     };
   });
 

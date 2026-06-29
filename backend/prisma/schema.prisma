@@ -76,6 +76,7 @@ model Producto {
   updatedAt        DateTime         @updatedAt
   itemsPedido      ItemPedido[]
   itemsCompra      ItemCompra[]
+  seriales         SerialProducto[]
 }
 
 model ProductoImagen {
@@ -218,14 +219,31 @@ model Compra {
 }
 
 model ItemCompra {
-  id         String   @id @default(cuid())
+  id         String          @id @default(cuid())
   compraId   String
-  compra     Compra   @relation(fields: [compraId], references: [id], onDelete: Cascade)
+  compra     Compra          @relation(fields: [compraId], references: [id], onDelete: Cascade)
   productoId String
-  producto   Producto @relation(fields: [productoId], references: [id])
+  producto   Producto        @relation(fields: [productoId], references: [id])
   cantidad   Int
-  precio     Decimal  @db.Decimal(10, 2)
-  createdAt  DateTime @default(now())
+  precio     Decimal         @db.Decimal(10, 2)
+  createdAt  DateTime        @default(now())
+  seriales   SerialProducto[]
+}
+
+model SerialProducto {
+  id                 String   @id @default(cuid())
+  serial             String
+  contificoProductoId String
+  productoId         String
+  producto           Producto @relation(fields: [productoId], references: [id])
+  estado             String   @default("disponible") // "disponible" | "vendido"
+  itemCompraId       String?
+  itemCompra         ItemCompra? @relation(fields: [itemCompraId], references: [id])
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([contificoProductoId, serial])
+  @@map("seriales_producto")
 }
 
 enum EstadoCompra {

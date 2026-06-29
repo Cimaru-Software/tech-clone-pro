@@ -43,7 +43,7 @@
       "Bash(xargs -I {} sh -c 'echo \"=== {} ===\" && head -50 {}')",
       "Bash(curl -s http://localhost:5173/)",
       "Bash(curl -s \"http://localhost:3001/api/categorias\")",
-      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); cats=d['categorias']; print\\(f'Total cats: {len\\(cats\\)}'\\); [print\\(f'  {c[\\\\\"nombre\\\\\"]}: {len\\(c[\\\\\"subcategorias\\\\\"]\\)} subs, subs con subsubs: {sum\\(1 for s in c[\\\\\"subcategorias\\\\\"] if s[\\\\\"subsubcategorias\\\\\"]\\)}'\\) for c in cats]\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); cats=d['categorias']; print\\(f'Total cats: {len\\(cats\\)}'\\); [print\\(f'  {c[\\\\\"nombre\\\\\"]}: {len\\(c[\\\\\"subcategorias\\\\\"]\\)} subs, subs con subsubs: {sum\\(1 for s in c[\\\\\"subcategorias\\\\\"] if s[\\\\\"subsubcategorias\\\\\"]\\)}'\\) for c in cats]\")"
     ]
   }
 }

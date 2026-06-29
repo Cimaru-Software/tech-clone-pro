@@ -11,13 +11,16 @@ type CompraFacturable = Compra & {
     telefono: string | null;
   };
   items: Array<{
+    id: string;
     productoId: string;
     cantidad: number;
     precio: Prisma.Decimal;
     producto: {
+      nombre: string;
       contificoId: string | null;
       ivaContificoPorc: string | null;
     };
+    seriales: Array<{ serial: string }>;
   }>;
 };
 
@@ -124,6 +127,7 @@ function buildItems(compra: CompraFacturable) {
       cantidad: 1,
       precio: base,
       ivaPorc: fallbackIvaPorc,
+      descripcion: undefined as string | undefined,
     }];
   }
 
@@ -132,11 +136,17 @@ function buildItems(compra: CompraFacturable) {
       throw new Error(`Producto ${item.productoId} no tiene contificoId sincronizado`);
     }
 
+    let descripcion: string | undefined;
+    if (item.seriales.length > 0) {
+      descripcion = `${item.producto.nombre} | S/N: ${item.seriales.map((s) => s.serial).join(", ")}`;
+    }
+
     return {
       contificoId: item.producto.contificoId,
       cantidad: item.cantidad,
       precio: toNumber(item.precio),
       ivaPorc: Number(item.producto.ivaContificoPorc || "15"),
+      descripcion,
     };
   });
 
@@ -158,6 +168,7 @@ function buildItems(compra: CompraFacturable) {
       cantidad: 1,
       precio: money(diferencia / (1 + shippingIvaPorc / 100)),
       ivaPorc: shippingIvaPorc,
+      descripcion: undefined,
     });
   }
 
@@ -186,7 +197,8 @@ export async function emitirFacturaContifico(compraId: string) {
       cliente: { select: { nombre: true, apellido: true, email: true, telefono: true } },
       items: {
         include: {
-          producto: { select: { contificoId: true, ivaContificoPorc: true } },
+          producto: { select: { nombre: true, contificoId: true, ivaContificoPorc: true } },
+          seriales: { select: { serial: true } },
         },
       },
     },

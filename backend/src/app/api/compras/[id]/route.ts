@@ -45,6 +45,22 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
       if (estado === "RECHAZADO") return { compra: updated, pedido: null };
 
+      // Asignar seriales disponibles a cada item de la compra
+      for (const item of compra.items) {
+        const serialesDisponibles = await tx.serialProducto.findMany({
+          where: { productoId: item.productoId, estado: "disponible", itemCompraId: null },
+          take: item.cantidad,
+          orderBy: { createdAt: "asc" },
+        });
+
+        if (serialesDisponibles.length > 0) {
+          await tx.serialProducto.updateMany({
+            where: { id: { in: serialesDisponibles.map((s) => s.id) } },
+            data: { estado: "vendido", itemCompraId: item.id },
+          });
+        }
+      }
+
       const pedido = await tx.pedido.create({
         data: {
           clienteId: compra.clienteId,
