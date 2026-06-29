@@ -1,12 +1,22 @@
 import { Link } from "@/lib/router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import img1 from "@/assets/projects/1.jpeg";
 import img2 from "@/assets/projects/2.png";
 import img3 from "@/assets/projects/3.png";
 import img4 from "@/assets/projects/4.png";
 import img5 from "@/assets/projects/5.png";
 import img6 from "@/assets/projects/6.png";
-import { Quote, ArrowRight, ClipboardList, Pencil, FileText, Wrench, ShieldCheck } from "lucide-react";
+import { ArrowRight, ClipboardList, Pencil, FileText, Wrench, ShieldCheck } from "lucide-react";
+
+const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
+
+interface GoogleReview {
+  author_name: string;
+  rating: number;
+  text: string;
+  relative_time_description: string;
+  profile_photo_url: string;
+}
 
 const projects = [
   { cat: "cctv", t: "Cámaras y paneles solares - Chocolatera (Salinas)", d: "Instalación de sistema de videovigilancia con energía renovable", img: img1, href: "https://www.facebook.com/share/r/1BGDbLW6y2/" },
@@ -28,6 +38,31 @@ const cats = [
 export default function Proyectos() {
   const [tab, setTab] = useState("all");
   const list = tab === "all" ? projects : projects.filter((p) => p.cat === tab);
+  const [googleReviews, setGoogleReviews] = useState<GoogleReview[]>([]);
+  const [googleRating, setGoogleRating] = useState<number | null>(null);
+  const [googleRatingCount, setGoogleRatingCount] = useState<number | null>(null);
+  const [googleReviewsError, setGoogleReviewsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    fetch(`${BACKEND}/api/google-reviews`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (!active) return;
+        setGoogleReviews(d.reviews || []);
+        setGoogleRating(typeof d.rating === "number" ? d.rating : null);
+        setGoogleRatingCount(typeof d.userRatingCount === "number" ? d.userRatingCount : null);
+        setGoogleReviewsError(d.error || null);
+      })
+      .catch(() => {
+        if (!active) return;
+        setGoogleReviews([]);
+        setGoogleRating(null);
+        setGoogleRatingCount(null);
+        setGoogleReviewsError("No se pudo conectar con Google Places.");
+      });
+    return () => { active = false; };
+  }, []);
   return (
     <div>
       <section className="gradient-hero text-white py-16">
@@ -110,26 +145,69 @@ export default function Proyectos() {
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="container-x py-12">
-        <h2 className="text-3xl font-black text-brand-blue text-center mb-8">Lo que dicen nuestros clientes</h2>
-        <div className="grid md:grid-cols-3 gap-5">
-          {[
-            { n: "Ing. María Vega", c: "Mall del Sur", q: "Implementación impecable. El equipo técnico demostró total profesionalismo." },
-            { n: "Lic. Carlos Mora", c: "Clínica Kennedy", q: "El sistema biométrico ha optimizado completamente nuestro control de acceso." },
-            { n: "Arq. Juan Pérez", c: "Trade Center", q: "Cableado certificado y entregado en tiempo récord. Altamente recomendados." },
-          ].map((t) => (
-            <div key={t.n} className="bg-white border rounded-lg p-6">
-              <Quote className="h-8 w-8 text-brand-red opacity-30" />
-              <p className="text-sm mt-3">{t.q}</p>
-              <div className="mt-4 pt-4 border-t">
-                <div className="font-bold">{t.n}</div>
-                <div className="text-xs text-muted-foreground">{t.c}</div>
+      {/* Google Reviews */}
+      <section className="bg-[#f6f8fc] py-12 md:py-16">
+        <div className="container-x text-center">
+          <div className="inline-flex items-center gap-2 rounded-full bg-white border px-4 py-2 text-xs font-semibold text-slate-600 shadow-sm">
+            <span className="text-lg leading-none">G</span>
+            <span>Reseñas verificadas de Google</span>
+          </div>
+          <h2 className="mt-5 text-3xl md:text-4xl font-black text-slate-900">Lo que dicen nuestros clientes</h2>
+          <p className="mt-3 text-slate-600 max-w-2xl mx-auto text-sm md:text-base">
+            Opiniones reales de clientes que confían en nosotros, directo desde Google Maps.
+          </p>
+        </div>
+
+        <div className="container-x mt-10">
+          {googleReviews.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+              {googleReviews.slice(0, 4).map((review, idx) => (
+                <article key={`${review.author_name}-${idx}`} className="bg-white rounded-3xl border border-slate-200 shadow-sm p-5 text-left min-h-[260px] flex flex-col">
+                  <div className="flex items-center justify-between">
+                    <div className="flex gap-0.5 text-amber-400 text-base">
+                      {"★★★★★".split("").map((s, i) => (
+                        <span key={i}>{s}</span>
+                      ))}
+                    </div>
+                    <span className="text-lg font-black text-slate-400">G</span>
+                  </div>
+                  <p className="mt-4 text-sm leading-6 text-slate-700 flex-1">"{review.text}"</p>
+                  <div className="mt-5 pt-4 border-t border-slate-100 flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-brand-blue text-white grid place-items-center font-bold overflow-hidden shrink-0">
+                      {review.profile_photo_url ? (
+                        <img src={review.profile_photo_url} alt={review.author_name} className="h-full w-full object-cover" />
+                      ) : (
+                        review.author_name.slice(0, 1).toUpperCase()
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-bold text-sm text-slate-900 truncate">{review.author_name}</div>
+                      <div className="text-xs text-slate-500">{review.relative_time_description}</div>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center text-sm text-slate-500">
+              Aún no hay reseñas disponibles.
+              {googleReviewsError ? <div className="mt-2 text-xs text-rose-500">{googleReviewsError}</div> : null}
+            </div>
+          )}
+
+          <div className="mt-10 flex justify-center">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-8 py-6 text-center min-w-[280px]">
+              <div className="text-xs font-bold tracking-[0.2em] text-slate-500">RESEÑAS DE GOOGLE</div>
+              <div className="mt-3 flex justify-center gap-1 text-amber-400 text-2xl">★★★★★</div>
+              <div className="mt-2 text-4xl font-black text-slate-900">{googleRating ? googleRating.toFixed(1) : "5.0"}</div>
+              <div className="mt-2 text-sm text-slate-500">
+                Basado en {googleRatingCount ?? googleReviews.length ?? 0} reseñas verificadas
               </div>
             </div>
-          ))}
+          </div>
         </div>
-        <div className="text-center mt-8">
+
+        <div className="text-center mt-10">
           <Link to="/contacto" className="inline-flex items-center gap-2 bg-brand-red hover:bg-brand-red-dark text-white px-6 py-3 rounded font-bold">Iniciar tu proyecto <ArrowRight className="h-4 w-4" /></Link>
         </div>
       </section>

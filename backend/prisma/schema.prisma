@@ -186,6 +186,7 @@ enum EstadoPedido {
   ENVIADO
   ENTREGADO
   CANCELADO
+  ANULADO
 }
 
 model Compra {

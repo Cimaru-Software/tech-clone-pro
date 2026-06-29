@@ -1,5 +1,14 @@
 import { Link } from "@/lib/router";
 import { Target, Eye, Heart, Award, Users, Building2, ShieldCheck } from "lucide-react";
+import brandHp from "@/assets/brands/hp.png";
+import brandLenovo from "@/assets/brands/lenovo.png";
+import brandDell from "@/assets/brands/dell.png";
+import brandHikvision from "@/assets/brands/hikvision.png";
+import brandDahua from "@/assets/brands/dahua.png";
+import brandEpson from "@/assets/brands/epson.png";
+import brandTplink from "@/assets/brands/tplink.png";
+import brandZkteco from "@/assets/brands/zkteco.png";
+import brandCisco from "@/assets/brands/cisco.png";
 
 export default function Nosotros() {
   return (
@@ -43,13 +52,25 @@ export default function Nosotros() {
         </div>
       </section>
 
-      <section className="container-x py-12">
-        <h2 className="text-3xl font-black text-brand-blue text-center mb-2">Distribuidores autorizados</h2>
-        <p className="text-center text-muted-foreground mb-8">Trabajamos con las marcas más confiables del mercado</p>
-        <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
-          {["HP", "Lenovo", "Dell", "Hikvision", "Dahua", "Epson", "TP-Link", "ZKTeco", "Cisco", "Apple", "Asus", "Brother"].map((b) => (
-            <div key={b} className="bg-white border rounded-lg p-6 text-center font-black text-brand-blue hover:border-brand-red transition-colors">{b}</div>
-          ))}
+      <section className="bg-white border-y py-12">
+        <div className="container-x text-center">
+          <h2 className="text-3xl font-black text-brand-blue text-center mb-2">Distribuidores autorizados</h2>
+          <p className="text-center text-muted-foreground mb-8">Trabajamos con las marcas más confiables del mercado</p>
+          <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-6">
+            {[
+              { name: "HP", src: brandHp },
+              { name: "Lenovo", src: brandLenovo },
+              { name: "Dell", src: brandDell },
+              { name: "Hikvision", src: brandHikvision },
+              { name: "Dahua", src: brandDahua },
+              { name: "Epson", src: brandEpson },
+              { name: "TP-Link", src: brandTplink },
+              { name: "ZKTeco", src: brandZkteco },
+              { name: "Cisco", src: brandCisco },
+            ].map((b) => (
+              <img key={b.name} src={b.src} alt={b.name} className="h-8 md:h-10 w-auto object-contain" />
+            ))}
+          </div>
         </div>
       </section>
 
