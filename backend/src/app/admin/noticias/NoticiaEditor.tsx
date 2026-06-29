@@ -49,12 +49,10 @@ function ResizableImageView({ node, updateAttributes }: { node: { attrs: { src: 
       <div style={{ display: "flex", justifyContent: justifyMap[align] || "center", margin: "0.75rem 0", userSelect: dragging ? "none" : "auto" }}>
         <div style={{ position: "relative", display: "inline-block" }}>
           <img ref={imgRef} src={node.attrs.src} alt="" style={{ width, maxWidth: "100%", display: "block", borderRadius: "8px", cursor: "default" }} />
-          {/* Resize handle */}
           <div
             onMouseDown={onMouseDown}
             style={{ position: "absolute", right: -6, bottom: -6, width: 14, height: 14, background: "#0B2C5F", borderRadius: "50%", cursor: "se-resize", border: "2px solid white", zIndex: 10 }}
           />
-          {/* Align buttons */}
           <div style={{ position: "absolute", top: -32, left: 0, display: "flex", gap: 4, background: "rgba(0,0,0,0.7)", borderRadius: 6, padding: "2px 6px" }}>
             {(["left", "center", "right"] as const).map((a) => (
               <button key={a} type="button" onMouseDown={(e) => { e.preventDefault(); updateAttributes({ align: a }); }}
@@ -89,6 +87,224 @@ const ResizableImage = Node.create({
   },
 });
 
+/* ─── Image Row Node (flex row of resizable images) ─── */
+interface RowImage { src: string; width: number }
+
+function ImageRowView({ node, updateAttributes }: {
+  node: { attrs: { images: RowImage[]; gap: number } };
+  updateAttributes: (a: Record<string, unknown>) => void;
+}) {
+  const images: RowImage[] = node.attrs.images || [];
+  const gap: number = node.attrs.gap ?? 8;
+
+  const dragState = useRef<{ idx: number; startX: number; startW: number } | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  function onResizeDown(e: React.MouseEvent, idx: number) {
+    e.preventDefault();
+    const imgEl = containerRef.current?.querySelectorAll("img")[idx] as HTMLImageElement | undefined;
+    dragState.current = { idx, startX: e.clientX, startW: imgEl?.offsetWidth || 200 };
+
+    function onMove(ev: MouseEvent) {
+      if (!dragState.current) return;
+      const { idx, startX, startW } = dragState.current;
+      const newW = Math.max(60, startW + (ev.clientX - startX));
+      const next = images.map((img, i) => i === idx ? { ...img, width: newW } : img);
+      updateAttributes({ images: next });
+    }
+    function onUp() {
+      dragState.current = null;
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    }
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }
+
+  function removeImage(idx: number) {
+    const next = images.filter((_, i) => i !== idx);
+    updateAttributes({ images: next });
+  }
+
+  async function addImage(file: File) {
+    const fd = new FormData();
+    fd.append("image", file);
+    const res = await fetch("/api/noticias/upload-image", { method: "POST", body: fd });
+    const data = await res.json();
+    if (data.url) {
+      updateAttributes({ images: [...images, { src: data.url, width: 200 }] });
+    }
+  }
+
+  return (
+    <NodeViewWrapper>
+      <div style={{ border: "2px dashed #0B2C5F33", borderRadius: 10, padding: "8px", margin: "0.75rem 0", background: "#f8faff" }}>
+        <div style={{ display: "flex", gap: 6, marginBottom: 6, alignItems: "center" }}>
+          <span style={{ fontSize: "0.72rem", color: "#6b7280", fontWeight: 600 }}>Fila de imágenes</span>
+          <button type="button" onMouseDown={(e) => { e.preventDefault(); fileRef.current?.click(); }}
+            style={{ marginLeft: "auto", padding: "2px 10px", borderRadius: 5, border: "1.5px solid #D71920", background: "#D71920", color: "white", cursor: "pointer", fontSize: "0.72rem", fontWeight: 700 }}>
+            + Añadir imagen
+          </button>
+          <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }}
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) addImage(f); e.target.value = ""; }} />
+        </div>
+        <div ref={containerRef} style={{ display: "flex", flexWrap: "wrap", gap, alignItems: "flex-start" }}>
+          {images.length === 0 ? (
+            <span style={{ color: "#9ca3af", fontSize: "0.82rem", padding: "12px 0" }}>Sin imágenes — usa "+ Añadir imagen"</span>
+          ) : images.map((img, i) => (
+            <div key={i} style={{ position: "relative", display: "inline-block", flexShrink: 0 }}>
+              <img src={img.src} alt="" style={{ width: img.width, maxWidth: "100%", display: "block", borderRadius: 8 }} />
+              <div onMouseDown={(e) => onResizeDown(e, i)}
+                style={{ position: "absolute", right: -5, bottom: -5, width: 13, height: 13, background: "#0B2C5F", borderRadius: "50%", cursor: "se-resize", border: "2px solid white", zIndex: 10 }} />
+              <button type="button" onMouseDown={(e) => { e.preventDefault(); removeImage(i); }}
+                style={{ position: "absolute", top: 3, right: 3, width: 20, height: 20, borderRadius: "50%", background: "rgba(215,25,32,0.85)", border: "none", color: "white", cursor: "pointer", fontSize: "0.8rem", fontWeight: 900, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </NodeViewWrapper>
+  );
+}
+
+const ImageRow = Node.create({
+  name: "imageRow",
+  group: "block",
+  atom: true,
+  addAttributes() {
+    return {
+      images: { default: [] },
+      gap: { default: 8 },
+    };
+  },
+  parseHTML() {
+    return [{ tag: "div[data-image-row]" }];
+  },
+  renderHTML({ HTMLAttributes }) {
+    const images: RowImage[] = HTMLAttributes.images || [];
+    const gap: number = HTMLAttributes.gap ?? 8;
+    const children = images.map((img: RowImage) =>
+      ["img", { src: img.src, alt: "", style: `width:${img.width}px;max-width:100%;border-radius:8px;display:inline-block;vertical-align:top;` }]
+    );
+    return [
+      "div",
+      mergeAttributes({ "data-image-row": "true", style: `display:flex;flex-wrap:wrap;gap:${gap}px;` }),
+      ...children,
+    ];
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(ImageRowView as unknown as Parameters<typeof ReactNodeViewRenderer>[0]);
+  },
+});
+
+/* ─── Image Grid Node ─── */
+interface GridImage { src: string; alt?: string }
+
+function ImageGridView({ node, updateAttributes }: {
+  node: { attrs: { images: GridImage[]; cols: number } };
+  updateAttributes: (a: Record<string, unknown>) => void;
+}) {
+  const images: GridImage[] = node.attrs.images || [];
+  const cols: number = node.attrs.cols || 2;
+
+  function removeImage(idx: number) {
+    const next = images.filter((_, i) => i !== idx);
+    updateAttributes({ images: next });
+  }
+
+  function setCols(c: number) {
+    updateAttributes({ cols: c });
+  }
+
+  async function addImageFromFile(file: File) {
+    const fd = new FormData();
+    fd.append("image", file);
+    const res = await fetch("/api/noticias/upload-image", { method: "POST", body: fd });
+    const data = await res.json();
+    if (data.url) {
+      updateAttributes({ images: [...images, { src: data.url, alt: "" }] });
+    }
+  }
+
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  return (
+    <NodeViewWrapper>
+      <div style={{ border: "2px dashed #0B2C5F22", borderRadius: 10, padding: "10px", margin: "0.75rem 0", background: "#f8faff" }}>
+        {/* Grid controls */}
+        <div style={{ display: "flex", gap: 6, marginBottom: 8, alignItems: "center", flexWrap: "wrap" }}>
+          <span style={{ fontSize: "0.75rem", color: "#6b7280", fontWeight: 600 }}>Galería — columnas:</span>
+          {[2, 3, 4].map((c) => (
+            <button key={c} type="button" onMouseDown={(e) => { e.preventDefault(); setCols(c); }}
+              style={{ padding: "2px 10px", borderRadius: 5, border: `1.5px solid ${cols === c ? "#0B2C5F" : "#d1d5db"}`, background: cols === c ? "#0B2C5F" : "white", color: cols === c ? "white" : "#374151", cursor: "pointer", fontSize: "0.75rem", fontWeight: 700 }}>
+              {c}
+            </button>
+          ))}
+          <button type="button" onMouseDown={(e) => { e.preventDefault(); fileRef.current?.click(); }}
+            style={{ marginLeft: "auto", padding: "3px 10px", borderRadius: 5, border: "1.5px solid #D71920", background: "#D71920", color: "white", cursor: "pointer", fontSize: "0.75rem", fontWeight: 700 }}>
+            + Añadir imagen
+          </button>
+          <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }}
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) addImageFromFile(f); e.target.value = ""; }} />
+        </div>
+
+        {/* Grid */}
+        {images.length === 0 ? (
+          <div style={{ textAlign: "center", color: "#9ca3af", padding: "24px 0", fontSize: "0.85rem" }}>
+            Sin imágenes — usa "+ Añadir imagen" para comenzar
+          </div>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 8 }}>
+            {images.map((img, i) => (
+              <div key={i} style={{ position: "relative", borderRadius: 8, overflow: "hidden", aspectRatio: "4/3" }}>
+                <img src={img.src} alt={img.alt || ""} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                <button type="button" onMouseDown={(e) => { e.preventDefault(); removeImage(i); }}
+                  style={{ position: "absolute", top: 4, right: 4, width: 22, height: 22, borderRadius: "50%", background: "rgba(215,25,32,0.85)", border: "none", color: "white", cursor: "pointer", fontSize: "0.8rem", fontWeight: 900, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </NodeViewWrapper>
+  );
+}
+
+const ImageGrid = Node.create({
+  name: "imageGrid",
+  group: "block",
+  atom: true,
+  addAttributes() {
+    return {
+      images: { default: [] },
+      cols: { default: 2 },
+    };
+  },
+  parseHTML() {
+    return [{ tag: "div[data-image-grid]" }];
+  },
+  renderHTML({ HTMLAttributes }) {
+    const images: GridImage[] = HTMLAttributes.images || [];
+    const cols: number = HTMLAttributes.cols || 2;
+    const children = images.map((img: GridImage) =>
+      ["div", { style: "position:relative;border-radius:8px;overflow:hidden;aspect-ratio:4/3;" },
+        ["img", { src: img.src, alt: img.alt || "", style: "width:100%;height:100%;object-fit:cover;display:block;" }]
+      ]
+    );
+    return [
+      "div",
+      mergeAttributes({ "data-image-grid": "true", "data-cols": String(cols), style: `display:grid;grid-template-columns:repeat(${cols},1fr);gap:8px;` }),
+      ...children,
+    ];
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(ImageGridView as unknown as Parameters<typeof ReactNodeViewRenderer>[0]);
+  },
+});
+
 /* ─── Toolbar button helpers ─── */
 const S = {
   base: (active = false): React.CSSProperties => ({
@@ -119,6 +335,8 @@ export default function NoticiaEditor({ content, onChange }: Props) {
       LinkExt.configure({ openOnClick: false }),
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       ResizableImage,
+      ImageGrid,
+      ImageRow,
     ],
     content,
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
@@ -147,11 +365,26 @@ export default function NoticiaEditor({ content, onChange }: Props) {
     }
   }
 
+  function insertImageGrid() {
+    if (!editor) return;
+    editor.chain().focus().insertContent({
+      type: "imageGrid",
+      attrs: { images: [], cols: 2 },
+    }).run();
+  }
+
+  function insertImageRow() {
+    if (!editor) return;
+    editor.chain().focus().insertContent({
+      type: "imageRow",
+      attrs: { images: [], gap: 8 },
+    }).run();
+  }
+
   function applyFontSize(size: string) {
     if (!editor) return;
     const num = parseInt(size);
     if (!num) return;
-    // Wrap selection in a span with font-size
     const { from, to } = editor.state.selection;
     if (from === to) return;
     editor.chain().focus().insertContent(`<span style="font-size:${num}px">${editor.state.doc.textBetween(from, to)}</span>`).run();
@@ -232,7 +465,9 @@ export default function NoticiaEditor({ content, onChange }: Props) {
       const url = window.prompt("URL del enlace:");
       if (url) editor.chain().focus().setLink({ href: url }).run();
     }} title="Enlace">🔗</Btn>,
-    <Btn key="img" onClick={() => imgInputRef.current?.click()} title="Insertar imagen">🖼️ Imagen</Btn>,
+    <Btn key="img" onClick={() => imgInputRef.current?.click()} title="Insertar imagen sola">🖼️ Imagen</Btn>,
+    <Btn key="row" onClick={insertImageRow} title="Insertar fila de imágenes lado a lado">↔ Fila</Btn>,
+    <Btn key="grid" onClick={insertImageGrid} title="Insertar galería en grid">⊞ Galería</Btn>,
     "sep",
     <Btn key="hr" onClick={() => editor.chain().focus().setHorizontalRule().run()} title="Separador">― HR</Btn>,
   ];
