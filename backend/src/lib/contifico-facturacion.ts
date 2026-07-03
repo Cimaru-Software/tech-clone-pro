@@ -1,6 +1,6 @@
 import type { Compra, Prisma } from "@prisma/client";
 import { buildDocumentoFromPedido, crearDocumento } from "@/lib/contifico";
-import type { ContificoCliente, ContificoCobro } from "@/lib/contifico";
+import type { ContificoCliente } from "@/lib/contifico";
 import { prisma } from "@/lib/prisma";
 
 type CompraFacturable = Compra & {
@@ -88,33 +88,6 @@ function buildCliente(compra: CompraFacturable): ContificoCliente {
   };
 }
 
-function buildCobro(compra: CompraFacturable): ContificoCobro {
-  const total = money(toNumber(compra.total)).toFixed(2);
-  const fecha = todayEc();
-
-  if (compra.metodoPago === "card") {
-    return {
-      forma_cobro: "TC",
-      monto: total,
-      fecha,
-      tipo_ping: process.env.CONTIFICO_BILLING_CARD_PING || "P",
-    };
-  }
-
-  const cuentaBancariaId = process.env.CONTIFICO_BILLING_TRANSFER_ACCOUNT_ID;
-  if (!cuentaBancariaId) {
-    throw new Error("CONTIFICO_BILLING_TRANSFER_ACCOUNT_ID no configurado para cobros por transferencia");
-  }
-
-  return {
-    forma_cobro: "TRA",
-    monto: total,
-    fecha,
-    cuenta_bancaria_id: cuentaBancariaId,
-    numero_comprobante: `TR-${compra.id.slice(-12)}`.slice(0, 15),
-  };
-}
-
 function buildItems(compra: CompraFacturable) {
   const fallbackProductId = process.env.CONTIFICO_BILLING_FALLBACK_PRODUCT_ID;
   const fallbackIvaPorc = Number(process.env.CONTIFICO_BILLING_FALLBACK_IVA_PORC || "15");
@@ -127,26 +100,22 @@ function buildItems(compra: CompraFacturable) {
       cantidad: 1,
       precio: base,
       ivaPorc: fallbackIvaPorc,
-      descripcion: undefined as string | undefined,
     }];
   }
 
-  const items = compra.items.map((item) => {
+  const items: Array<{ contificoId: string; cantidad: number; precio: number; ivaPorc: number; serie?: string }> = compra.items.map((item) => {
     if (!item.producto.contificoId) {
       throw new Error(`Producto ${item.productoId} no tiene contificoId sincronizado`);
     }
 
-    let descripcion: string | undefined;
-    if (item.seriales.length > 0) {
-      descripcion = `${item.producto.nombre} | S/N: ${item.seriales.map((s) => s.serial).join(", ")}`;
-    }
+    const serie = item.seriales.length > 0 ? item.seriales[0].serial : undefined;
 
     return {
       contificoId: item.producto.contificoId,
       cantidad: item.cantidad,
       precio: toNumber(item.precio),
       ivaPorc: Number(item.producto.ivaContificoPorc || "15"),
-      descripcion,
+      serie,
     };
   });
 
@@ -168,7 +137,6 @@ function buildItems(compra: CompraFacturable) {
       cantidad: 1,
       precio: money(diferencia / (1 + shippingIvaPorc / 100)),
       ivaPorc: shippingIvaPorc,
-      descripcion: undefined,
     });
   }
 
@@ -210,14 +178,12 @@ export async function emitirFacturaContifico(compraId: string) {
   }
 
   try {
-    const cobro = buildCobro(compra);
     const doc = buildDocumentoFromPedido({
       fechaEmision: todayEc(),
       documento: buildNumeroDocumento(compra.id),
       autorizacion: buildAutorizacion(compra.id),
       descripcion: `Compra e-commerce #${compra.id}`,
       cliente: buildCliente(compra),
-      cobro,
       items: buildItems(compra),
     });
 
@@ -227,15 +193,14 @@ export async function emitirFacturaContifico(compraId: string) {
         compraId: compra.id,
         contificoDocId: resp.id,
         contificoSecuencial: resp.secuencial ?? null,
-        contificoCobroForma: cobro.forma_cobro,
         estado: "emitida",
       },
     });
 
-    await logContifico(compra.id, "ok", `Factura y cobro emitidos: ${resp.id}`);
+    await logContifico(compra.id, "ok", `Factura emitida: ${resp.id}`);
     return factura;
   } catch (err) {
-    await logContifico(compra.id, "error", "Error al emitir factura/cobro", String(err));
+    await logContifico(compra.id, "error", "Error al emitir factura", String(err));
     throw err;
   }
 }

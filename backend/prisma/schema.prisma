@@ -270,7 +270,6 @@ model ContificoFactura {
   compra            Compra   @relation(fields: [compraId], references: [id])
   contificoDocId    String
   contificoSecuencial String?
-  contificoCobroForma String?
   estado            String   @default("emitida")
   createdAt         DateTime @default(now())
 

@@ -63,7 +63,8 @@ export interface ContificoDocumentoDetalle {
   base_cero: number;
   base_gravable: number;
   base_no_gravable: number;
-  descripcion?: string;
+  serie?: string | null;
+  descripcion?: string | null;
 }
 
 export interface ContificoDocumento {
@@ -85,7 +86,6 @@ export interface ContificoDocumento {
   adicional2?: string;
   cliente: ContificoCliente;
   detalles: ContificoDocumentoDetalle[];
-  cobros?: ContificoCobro[];
 }
 
 export interface ContificoCliente {
@@ -99,14 +99,6 @@ export interface ContificoCliente {
   es_extranjero: boolean;
 }
 
-export interface ContificoCobro {
-  forma_cobro: "TC" | "TRA";
-  monto: string;
-  fecha: string;
-  tipo_ping?: string;
-  cuenta_bancaria_id?: string;
-  numero_comprobante?: string;
-}
 
 // Obtiene los IDs de productos que tienen movimientos en la Bodega Ecommerce.
 // El endpoint /movimiento-inventario/?bodega_id=X sí filtra correctamente por bodega.
@@ -227,21 +219,6 @@ export async function crearDocumento(
   return res.json();
 }
 
-export async function crearCobro(
-  documentoId: string,
-  cobro: ContificoCobro
-): Promise<{ id: string }> {
-  const res = await fetch(`${BASE_URL_V1}/documento/${documentoId}/cobro/?format=json`, {
-    method: "POST",
-    headers: headers("billing"),
-    body: JSON.stringify(cobro),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Contífico crearCobro: ${res.status} ${text}`);
-  }
-  return res.json();
-}
 
 export interface ContificoSerial {
   productoId: string;
@@ -305,13 +282,12 @@ export function buildDocumentoFromPedido(params: {
   autorizacion: string;
   descripcion: string;
   cliente: ContificoCliente;
-  cobro: ContificoCobro;
   items: Array<{
     contificoId: string;
     cantidad: number;
     precio: number;
     ivaPorc: number;
-    descripcion?: string;
+    serie?: string;
   }>;
 }): ContificoDocumento {
   const pos = process.env.CONTIFICO_BILLING_POS_ID || process.env.CONTIFICO_BILLING_API_TOKEN;
@@ -335,7 +311,7 @@ export function buildDocumentoFromPedido(params: {
       base_cero: con_iva ? 0 : base,
       base_gravable: con_iva ? base : 0,
       base_no_gravable: 0,
-      ...(item.descripcion ? { descripcion: item.descripcion } : {}),
+      ...(item.serie ? { serie: item.serie } : {}),
     };
   });
 
@@ -364,6 +340,5 @@ export function buildDocumentoFromPedido(params: {
     adicional2: "",
     cliente: params.cliente,
     detalles,
-    cobros: [params.cobro],
   };
 }

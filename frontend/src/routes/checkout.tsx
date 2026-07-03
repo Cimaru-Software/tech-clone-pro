@@ -4,6 +4,7 @@ import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { gaPurchase } from "@/lib/analytics";
 import { CheckCircle2, ChevronRight, Lock, Truck, CreditCard, Upload, Loader2 } from "lucide-react";
+import bakaccounts from "@/assets/bakaccounts.jpeg";
 
 declare global {
   interface Window {
@@ -447,14 +448,8 @@ export default function Checkout() {
 
                   {metodoPago === "transfer" && (
                     <div className="mt-4 space-y-3">
-                      <div className="border rounded p-4 bg-secondary/60 text-sm">
-                        <div className="font-black text-brand-blue mb-3">Datos para transferencia</div>
-                        <div className="grid sm:grid-cols-2 gap-2">
-                          <div><span className="text-muted-foreground">Banco: </span><span className="font-semibold">Banco Pichincha</span></div>
-                          <div><span className="text-muted-foreground">Tipo: </span><span className="font-semibold">Cuenta de ahorros</span></div>
-                          <div><span className="text-muted-foreground">N. cuenta: </span><span className="font-semibold">2208101068</span></div>
-                          <div><span className="text-muted-foreground">CI: </span><span className="font-semibold">1722212717</span></div>
-                        </div>
+                      <div className="border rounded overflow-hidden">
+                        <img src={bakaccounts} alt="Datos para transferencia" className="w-full object-contain" />
                       </div>
                       <div className="border-2 border-dashed border-brand-blue/25 rounded-lg bg-secondary/60 p-5">
                         <div className="flex flex-col sm:flex-row sm:items-center gap-4">

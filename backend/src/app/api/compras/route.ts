@@ -61,6 +61,7 @@ export async function GET(request: NextRequest) {
       cliente: { select: { nombre: true, apellido: true, email: true } },
       pedido: { select: { id: true, estado: true } },
       items: { include: { producto: { include: { imagenes: { take: 1 } } } } },
+      facturaContifico: { select: { contificoDocId: true, contificoSecuencial: true, estado: true } },
     },
     orderBy: { createdAt: "desc" },
   });

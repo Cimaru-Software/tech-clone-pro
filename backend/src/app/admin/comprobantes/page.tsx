@@ -19,6 +19,7 @@ interface Compra {
   createdAt: string;
   cliente: { nombre: string; apellido: string; email: string };
   pedido?: { id: string; estado: string } | null;
+  facturaContifico?: { contificoDocId: string; contificoSecuencial?: string | null; estado: string } | null;
   items: {
     id: string;
     cantidad: number;
@@ -109,6 +110,7 @@ export default function ComprobantesPage() {
       });
     }
   }
+
 
   const normalizedSearch = search.trim().toLowerCase();
   const comprasFiltradas = compras.filter((c) => {
