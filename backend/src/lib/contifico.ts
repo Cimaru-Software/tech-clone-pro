@@ -140,40 +140,56 @@ async function getProductIdsBodegaEcommerce(): Promise<Set<string>> {
   return ids;
 }
 
+async function fetchProductosPage(page: number): Promise<{ results: ContificoProducto[]; count: number }> {
+  const res = await fetch(
+    `${BASE_URL_V2}/producto/?format=json&page=${page}`,
+    { headers: headers("sync"), cache: "no-store" }
+  );
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Contífico getProductos: ${res.status} ${text}`);
+  }
+  const data = await res.json();
+  return { results: data.results ?? [], count: data.count ?? 0 };
+}
+
 // Devuelve solo los productos que tienen movimientos en la Bodega Ecommerce.
-export async function getProductos(): Promise<ContificoProducto[]> {
+// El catálogo completo de Contífico tiene miles de productos paginados (100/página);
+// se piden las páginas en paralelo (con concurrencia limitada) para no exceder
+// timeouts de proxy/CDN si se hicieran de forma secuencial.
+export async function getProductos(
+  onProgress?: (traidos: number, total: number) => void
+): Promise<ContificoProducto[]> {
   // Paso 1: obtener IDs de productos con movimientos en bodega ecommerce
   const idsEcommerce = await getProductIdsBodegaEcommerce();
 
   if (idsEcommerce.size === 0) return [];
 
   // Paso 2: obtener todos los productos y filtrar por esos IDs
+  const primera = await fetchProductosPage(1);
   const todos: ContificoProducto[] = [];
-  let page = 1;
+  const PER_PAGE = 100;
+  const totalPaginas = Math.ceil(primera.count / PER_PAGE);
 
-  while (true) {
-    const res = await fetch(
-      `${BASE_URL_V2}/producto/?format=json&page=${page}`,
-      { headers: headers("sync"), cache: "no-store" }
-    );
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`Contífico getProductos: ${res.status} ${text}`);
-    }
-    const data = await res.json();
-    const results: ContificoProducto[] = data.results ?? [];
+  for (const p of primera.results) {
+    if (idsEcommerce.has(p.id)) todos.push(p);
+  }
+  onProgress?.(primera.results.length, primera.count);
 
-    for (const p of results) {
-      if (idsEcommerce.has(p.id)) {
-        todos.push(p);
+  const CONCURRENCIA = 5;
+  const paginasRestantes = Array.from({ length: totalPaginas - 1 }, (_, i) => i + 2);
+
+  let traidos = primera.results.length;
+  for (let i = 0; i < paginasRestantes.length; i += CONCURRENCIA) {
+    const lote = paginasRestantes.slice(i, i + CONCURRENCIA);
+    const paginas = await Promise.all(lote.map(fetchProductosPage));
+    for (const pagina of paginas) {
+      for (const p of pagina.results) {
+        if (idsEcommerce.has(p.id)) todos.push(p);
       }
+      traidos += pagina.results.length;
     }
-
-    if (data.next) {
-      page++;
-    } else {
-      break;
-    }
+    onProgress?.(traidos, primera.count);
   }
 
   return todos;

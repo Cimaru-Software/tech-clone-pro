@@ -24,7 +24,12 @@ export async function GET(request: NextRequest) {
       try {
         send({ fase: "cargando", mensaje: "Obteniendo catálogo de Contífico..." });
 
-        const todosProductos = await getProductos();
+        const todosProductos = await getProductos((traidos, total) => {
+          send({
+            fase: "cargando",
+            mensaje: `Descargando catálogo de Contífico... ${traidos} de ${total}`,
+          });
+        });
         const activos = todosProductos.filter(
           (p) => p.estado === "A" || p.estado === "ACTIVO"
         );
