@@ -180,11 +180,23 @@ const ImageRow = Node.create({
     };
   },
   parseHTML() {
-    return [{ tag: "div[data-image-row]" }];
+    return [{
+      tag: "div[data-image-row]",
+      getAttrs: (el) => {
+        const node = el as HTMLElement;
+        const imgs = Array.from(node.querySelectorAll("img"));
+        const images: RowImage[] = imgs.map((img) => ({
+          src: img.getAttribute("src") || "",
+          width: parseInt(img.style.width) || 200,
+        }));
+        const gapMatch = /gap:\s*(\d+)px/.exec(node.style.gap || node.getAttribute("style") || "");
+        return { images, gap: gapMatch ? parseInt(gapMatch[1]) : 8 };
+      },
+    }];
   },
-  renderHTML({ HTMLAttributes }) {
-    const images: RowImage[] = HTMLAttributes.images || [];
-    const gap: number = HTMLAttributes.gap ?? 8;
+  renderHTML({ node }) {
+    const images: RowImage[] = node.attrs.images || [];
+    const gap: number = node.attrs.gap ?? 8;
     const children = images.map((img: RowImage) =>
       ["img", { src: img.src, alt: "", style: `width:${img.width}px;max-width:100%;border-radius:8px;display:inline-block;vertical-align:top;` }]
     );
@@ -284,11 +296,23 @@ const ImageGrid = Node.create({
     };
   },
   parseHTML() {
-    return [{ tag: "div[data-image-grid]" }];
+    return [{
+      tag: "div[data-image-grid]",
+      getAttrs: (el) => {
+        const node = el as HTMLElement;
+        const imgs = Array.from(node.querySelectorAll("img"));
+        const images: GridImage[] = imgs.map((img) => ({
+          src: img.getAttribute("src") || "",
+          alt: img.getAttribute("alt") || "",
+        }));
+        const colsAttr = node.getAttribute("data-cols");
+        return { images, cols: colsAttr ? parseInt(colsAttr) : 2 };
+      },
+    }];
   },
-  renderHTML({ HTMLAttributes }) {
-    const images: GridImage[] = HTMLAttributes.images || [];
-    const cols: number = HTMLAttributes.cols || 2;
+  renderHTML({ node }) {
+    const images: GridImage[] = node.attrs.images || [];
+    const cols: number = node.attrs.cols || 2;
     const children = images.map((img: GridImage) =>
       ["div", { style: "position:relative;border-radius:8px;overflow:hidden;aspect-ratio:4/3;" },
         ["img", { src: img.src, alt: img.alt || "", style: "width:100%;height:100%;object-fit:cover;display:block;" }]
