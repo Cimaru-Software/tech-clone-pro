@@ -175,6 +175,33 @@ const CATEGORIAS: CatDef[] = [
   },
 ];
 
+const PROVINCIAS_ENVIO: { provincia: string; costo: number }[] = [
+  { provincia: "Azuay", costo: 8 },
+  { provincia: "Bolívar", costo: 8 },
+  { provincia: "Cañar", costo: 8 },
+  { provincia: "Carchi", costo: 8 },
+  { provincia: "Chimborazo", costo: 8 },
+  { provincia: "Cotopaxi", costo: 8 },
+  { provincia: "El Oro", costo: 8 },
+  { provincia: "Esmeraldas", costo: 8 },
+  { provincia: "Galápagos", costo: 15 },
+  { provincia: "Guayas", costo: 5 },
+  { provincia: "Imbabura", costo: 8 },
+  { provincia: "Loja", costo: 8 },
+  { provincia: "Los Ríos", costo: 8 },
+  { provincia: "Manabí", costo: 8 },
+  { provincia: "Morona Santiago", costo: 10 },
+  { provincia: "Napo", costo: 10 },
+  { provincia: "Orellana", costo: 10 },
+  { provincia: "Pastaza", costo: 10 },
+  { provincia: "Pichincha", costo: 5 },
+  { provincia: "Santa Elena", costo: 8 },
+  { provincia: "Santo Domingo de los Tsáchilas", costo: 8 },
+  { provincia: "Sucumbíos", costo: 10 },
+  { provincia: "Tungurahua", costo: 8 },
+  { provincia: "Zamora Chinchipe", costo: 10 },
+];
+
 async function main() {
   await prisma.admin.deleteMany({ where: { email: "admin@techclone.com" } });
 
@@ -229,7 +256,16 @@ async function main() {
     }
   }
 
+  for (const item of PROVINCIAS_ENVIO) {
+    await prisma.envioProvincia.upsert({
+      where: { provincia: item.provincia },
+      update: {},
+      create: { provincia: item.provincia, costo: item.costo },
+    });
+  }
+
   console.log("✅ Seed completado: 10 categorías con subcategorías y subsubcategorías.");
+  console.log(`✅ Costos de envío por provincia: ${PROVINCIAS_ENVIO.length} provincias.`);
   console.log("   admin@lacasadelcomputador.com / 4dm1n*Computador");
 }
 
