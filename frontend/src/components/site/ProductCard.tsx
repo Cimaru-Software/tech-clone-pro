@@ -29,7 +29,10 @@ export function ProductCard({ product }: { product: Product }) {
           {product.oldPrice && (
             <div className="text-xs text-muted-foreground line-through">${product.oldPrice.toFixed(2)}</div>
           )}
-          <div className="text-xl font-black text-brand-blue">${product.price.toFixed(2)}</div>
+          <div className="text-xl font-black text-brand-blue">
+            ${product.price.toFixed(2)}
+            <span className="text-xs font-normal text-muted-foreground ml-1">+ IVA</span>
+          </div>
         </div>
         <button
           onClick={() => add(product)}

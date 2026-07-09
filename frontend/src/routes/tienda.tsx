@@ -45,7 +45,10 @@ function ProductCardBackend({ producto }: { producto: Producto }) {
           {producto.descuento > 0 && (
             <div className="text-xs text-muted-foreground line-through">${precio.toFixed(2)}</div>
           )}
-          <div className="text-xl font-black text-brand-blue">${precioFinal.toFixed(2)}</div>
+          <div className="text-xl font-black text-brand-blue">
+            ${precioFinal.toFixed(2)}
+            <span className="text-xs font-normal text-muted-foreground ml-1">+ IVA</span>
+          </div>
         </div>
         <button
           onClick={(e) => { e.stopPropagation(); add(producto); }}

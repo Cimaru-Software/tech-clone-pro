@@ -121,6 +121,23 @@ model BannerPromocion {
   @@map("banner_promocion")
 }
 
+model ConfiguracionIva {
+  id         String   @id @default(cuid())
+  porcentaje Float    @default(15)
+  updatedAt  DateTime @updatedAt
+
+  @@map("configuracion_iva")
+}
+
+model EnvioProvincia {
+  id        String   @id @default(cuid())
+  provincia String   @unique
+  costo     Float    @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@map("envio_provincia")
+}
+
 model Certificado {
   id        String   @id @default(cuid())
   nombre    String

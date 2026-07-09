@@ -185,6 +185,7 @@ export default function ProductoDetalle() {
               )}
               <div className="flex items-end gap-3">
                 <span className="text-4xl font-black text-brand-blue">${precioFinal.toFixed(2)}</span>
+                <span className="text-sm font-normal text-muted-foreground mb-1">+ IVA</span>
                 {producto.descuento > 0 && (
                   <span className="text-sm font-bold text-green-600 mb-1">Ahorras ${(precio - precioFinal).toFixed(2)}</span>
                 )}

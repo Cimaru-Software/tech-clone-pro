@@ -1,6 +1,6 @@
 import { Link, useParams } from "@/lib/router";
-import { useEffect, useState } from "react";
-import { Calendar, ArrowLeft } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Calendar, ArrowLeft, X } from "lucide-react";
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
 
@@ -18,6 +18,21 @@ export default function NoticiaDetalle() {
   const [noticia, setNoticia] = useState<Noticia | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = bodyRef.current;
+    if (!el) return;
+    function handleClick(e: MouseEvent) {
+      const target = e.target as HTMLElement;
+      if (target instanceof HTMLImageElement) {
+        setLightboxSrc(target.src);
+      }
+    }
+    el.addEventListener("click", handleClick);
+    return () => el.removeEventListener("click", handleClick);
+  }, [noticia]);
 
   useEffect(() => {
     if (!slug) return;
@@ -57,7 +72,8 @@ export default function NoticiaDetalle() {
         <img
           src={`${BACKEND}${noticia.portada}`}
           alt={noticia.titulo}
-          className="w-full h-full object-cover max-h-[480px]"
+          className="w-full h-full object-cover max-h-[480px] cursor-zoom-in"
+          onClick={() => setLightboxSrc(`${BACKEND}${noticia.portada}`)}
         />
       </div>
 
@@ -79,11 +95,33 @@ export default function NoticiaDetalle() {
 
           {/* Cuerpo HTML */}
           <div
+            ref={bodyRef}
             className="noticia-body prose-content"
             dangerouslySetInnerHTML={{ __html: noticia.cuerpo }}
           />
         </div>
       </div>
+
+      {lightboxSrc && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 cursor-zoom-out"
+          onClick={() => setLightboxSrc(null)}
+        >
+          <button
+            className="absolute top-4 right-4 text-white/80 hover:text-white"
+            onClick={() => setLightboxSrc(null)}
+            aria-label="Cerrar"
+          >
+            <X className="h-8 w-8" />
+          </button>
+          <img
+            src={lightboxSrc}
+            alt=""
+            className="max-h-[90vh] max-w-[90vw] object-contain cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
 
       <style>{`
         .noticia-body h1 { font-size:2rem;font-weight:800;margin:1.5rem 0 0.75rem;color:#0B2C5F;line-height:1.2 }
@@ -97,7 +135,7 @@ export default function NoticiaDetalle() {
         .noticia-body pre { background:#1e293b;color:#e2e8f0;padding:1.25rem;border-radius:10px;overflow-x:auto;font-size:0.875rem;margin:1rem 0 }
         .noticia-body code { background:#f1f5f9;padding:0.2rem 0.5rem;border-radius:4px;font-size:0.875em;color:#0B2C5F }
         .noticia-body pre code { background:none;color:inherit;padding:0 }
-        .noticia-body img { max-width:100%;border-radius:10px;margin:1.25rem auto;display:block;box-shadow:0 4px 16px rgba(0,0,0,0.1) }
+        .noticia-body img { max-width:100%;border-radius:10px;margin:1.25rem auto;display:block;box-shadow:0 4px 16px rgba(0,0,0,0.1);cursor:zoom-in }
         .noticia-body hr { border:none;border-top:2px solid #e2e8f0;margin:2rem 0 }
         .noticia-body a { color:#D71920;text-decoration:underline;font-weight:500 }
         .noticia-body a:hover { color:#0B2C5F }

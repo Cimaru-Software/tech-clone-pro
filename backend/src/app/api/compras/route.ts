@@ -44,9 +44,14 @@ function getPrecioFinal(precio: unknown, descuento: number) {
   return Number((base * (1 - Math.min(descuento, 100) / 100)).toFixed(2));
 }
 
-function getTotal(subtotal: number) {
-  const envio = subtotal > 500 ? 0 : 8;
-  const iva = subtotal * 0.15;
+async function getTotal(subtotal: number, provincia: string) {
+  const [ivaConfig, envioConfig] = await Promise.all([
+    prisma.configuracionIva.findFirst(),
+    prisma.envioProvincia.findUnique({ where: { provincia } }),
+  ]);
+  const ivaPorcentaje = ivaConfig?.porcentaje ?? 15;
+  const envio = envioConfig?.costo ?? 8;
+  const iva = subtotal * (ivaPorcentaje / 100);
   return Number((subtotal + envio + iva).toFixed(2));
 }
 
@@ -172,7 +177,7 @@ export async function POST(request: NextRequest) {
     }
 
     const subtotal = itemsConPrecio.reduce((acc, item) => acc + item.precio * item.cantidad, 0);
-    const total = getTotal(subtotal);
+    const total = await getTotal(subtotal, provincia);
 
     // Para pago con tarjeta: compra APROBADO + pedido PENDIENTE creado automáticamente
     // Para transferencia: compra PENDIENTE, sin pedido (admin valida el comprobante)

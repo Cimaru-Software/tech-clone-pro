@@ -49,11 +49,28 @@ export default function Checkout() {
   const [isOpeningPlux, setIsOpeningPlux] = useState(false);
   const [error, setError] = useState("");
   const pluxLoadingTimeoutRef = useRef<number | null>(null);
-
-  const shipping = subtotal > 500 ? 0 : 8;
-  const tax = subtotal * 0.15;
-  const total = subtotal + shipping + tax;
+  const [ivaPorcentaje, setIvaPorcentaje] = useState(15);
+  const [enviosPorProvincia, setEnviosPorProvincia] = useState<Record<string, number>>({});
   const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
+
+  useEffect(() => {
+    fetch(`${backendUrl}/api/parametros/iva`)
+      .then((r) => r.json())
+      .then((d) => { if (Number.isFinite(d?.porcentaje)) setIvaPorcentaje(d.porcentaje); })
+      .catch(() => {});
+    fetch(`${backendUrl}/api/parametros/envio`)
+      .then((r) => r.json())
+      .then((d) => {
+        const map: Record<string, number> = {};
+        for (const e of d?.envios || []) map[e.provincia] = Number(e.costo);
+        setEnviosPorProvincia(map);
+      })
+      .catch(() => {});
+  }, [backendUrl]);
+
+  const shipping = shipping_form.provincia ? (enviosPorProvincia[shipping_form.provincia] ?? 8) : 0;
+  const tax = subtotal * (ivaPorcentaje / 100);
+  const total = subtotal + shipping + tax;
 
   useEffect(() => {
     if (!cliente) return;
@@ -352,6 +369,7 @@ export default function Checkout() {
                             <div className="text-xs text-muted-foreground line-through">${(itemOriginalPrice(i) * i.qty).toFixed(2)}</div>
                           )}
                           <div className="font-bold text-brand-blue">${(itemPrice(i) * i.qty).toFixed(2)}</div>
+                          <div className="text-xs text-muted-foreground">${itemPrice(i).toFixed(2)} c/u</div>
                         </div>
                       </div>
                     ))}
@@ -434,7 +452,7 @@ export default function Checkout() {
                   <div className="space-y-3">
                     {[
                       { v: "transfer", t: "Transferencia bancaria", d: "Carga el comprobante para validar tu compra" },
-                      { v: "card", t: "Tarjeta de crédito / débito", d: "Visa, Mastercard, American Express, Diners, Discover" },
+                      { v: "card", t: "Tarjeta de crédito / débito", d: "Aceptamos tarjetas Produbanco, Bolivariano, Banco Internacional, Diners Club, Pichincha, Rumiñahui, Manabí, Loja, Amazonas" },
                     ].map((m) => (
                       <label key={m.v} className="flex items-start gap-3 border rounded p-3 has-[:checked]:border-brand-red has-[:checked]:bg-secondary cursor-pointer hover:border-brand-red">
                         <input type="radio" name="pay" checked={metodoPago === m.v} onChange={() => setMetodoPago(m.v)} className="mt-1 accent-brand-red" />
@@ -536,8 +554,8 @@ export default function Checkout() {
               <h3 className="font-black text-brand-blue mb-3">Resumen del pedido</h3>
               <div className="text-sm space-y-2 border-b pb-3">
                 <div className="flex justify-between"><span>Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
-                <div className="flex justify-between"><span>Envío</span><span>{shipping === 0 ? "GRATIS" : `$${shipping.toFixed(2)}`}</span></div>
-                <div className="flex justify-between"><span>IVA (15%)</span><span>${tax.toFixed(2)}</span></div>
+                <div className="flex justify-between"><span>Envío</span><span>{!shipping_form.provincia ? "Selecciona tu provincia" : shipping === 0 ? "GRATIS" : `$${shipping.toFixed(2)}`}</span></div>
+                <div className="flex justify-between"><span>IVA ({ivaPorcentaje}%)</span><span>${tax.toFixed(2)}</span></div>
               </div>
               <div className="flex justify-between font-black text-lg text-brand-blue mt-3">
                 <span>Total</span><span>${total.toFixed(2)}</span>
