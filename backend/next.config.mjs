@@ -37,7 +37,7 @@ const nextConfig = {
   },
   experimental: {
     serverActions: {
-      allowedOrigins: ["localhost:3000", "localhost:3001", "localhost:5173"],
+      allowedOrigins: ["localhost:3000", "localhost:3001", "localhost:5173", "lacasadelcomputador.ec", "www.lacasadelcomputador.ec"],
     },
   },
   async headers() {
