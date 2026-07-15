@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   const subcategoria = searchParams.get("subcategoria");
   const subsubcategoria = searchParams.get("subsubcategoria");
   const estado = searchParams.get("estado");
-  const search = searchParams.get("search");
+  const search = searchParams.get("search") || searchParams.get("q");
   const destacado = searchParams.get("destacado");
   const conDescuento = searchParams.get("conDescuento");
 
@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
       ...(subsubcategoria && { subsubcategoria: { slug: subsubcategoria } }),
       // Si se pasa ?todos=1 (admin) no filtra por estado. Si se pasa ?estado=X filtra por ese valor. Si no, filtra ACTIVO por defecto.
       ...(todos === "1" ? {} : estado ? { estado: estado as "ACTIVO" | "INACTIVO" } : { estado: "ACTIVO" }),
+      ...(todos !== "1" && { stock: { gt: 0 } }),
       ...(destacado === "true" && { destacado: true }),
       ...(destacado === "false" && { destacado: false }),
       ...(conDescuento === "true" && { descuento: { gt: 0 } }),

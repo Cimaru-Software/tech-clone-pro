@@ -17,13 +17,20 @@ const productoUpdateSchema = z.object({
   estado: z.enum(["ACTIVO", "INACTIVO"]).optional(),
 });
 
-export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const token = request.cookies.get("admin_token")?.value;
+  const esAdmin = !!token && (await verifyAdminToken(token));
+
   const producto = await prisma.producto.findUnique({
     where: { id },
     include: { categoria: true, subcategoria: true, subsubcategoria: true, imagenes: { orderBy: { orden: "asc" } } },
   });
-  if (!producto) return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 });
+
+  if (!producto || (!esAdmin && (producto.stock <= 0 || producto.estado !== "ACTIVO"))) {
+    return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 });
+  }
+
   return NextResponse.json({ producto });
 }
 
