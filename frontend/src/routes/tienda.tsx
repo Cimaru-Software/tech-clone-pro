@@ -51,10 +51,11 @@ function ProductCardBackend({ producto }: { producto: Producto }) {
           </div>
         </div>
         <button
-          onClick={(e) => { e.stopPropagation(); add(producto); }}
-          className="mt-3 bg-brand-red hover:bg-brand-red-dark text-white text-sm font-bold py-2 rounded flex items-center justify-center gap-2 transition-colors"
+          onClick={(e) => { e.stopPropagation(); if (producto.stock > 0) add(producto); }}
+          disabled={producto.stock === 0}
+          className="mt-3 bg-brand-red hover:bg-brand-red-dark text-white text-sm font-bold py-2 rounded flex items-center justify-center gap-2 transition-colors disabled:bg-slate-300 disabled:hover:bg-slate-300 disabled:cursor-not-allowed"
         >
-          <ShoppingCart className="h-4 w-4" /> Agregar
+          <ShoppingCart className="h-4 w-4" /> {producto.stock === 0 ? "Sin stock" : "Agregar"}
         </button>
       </div>
     </div>

@@ -27,7 +27,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     include: { categoria: true, subcategoria: true, subsubcategoria: true, imagenes: { orderBy: { orden: "asc" } } },
   });
 
-  if (!producto || (!esAdmin && (producto.stock <= 0 || producto.estado !== "ACTIVO"))) {
+  if (!producto || (!esAdmin && producto.estado !== "ACTIVO")) {
     return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 });
   }
 

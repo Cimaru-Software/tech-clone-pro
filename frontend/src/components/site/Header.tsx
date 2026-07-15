@@ -125,8 +125,8 @@ export function Header() {
 
   const goToSuggestion = (s: SearchSuggestion) => {
     setSuggestionsOpen(false);
-    setQ(s.nombre);
-    navigate({ to: "/tienda", search: { q: s.nombre } as any });
+    setQ("");
+    navigate({ to: `/producto/${s.id}` });
   };
 
   const closeMobile = () => {
