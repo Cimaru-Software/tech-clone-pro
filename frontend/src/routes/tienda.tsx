@@ -371,7 +371,7 @@ export default function Tienda() {
       <div className="bg-brand-blue text-white rounded p-4 text-sm">
         <div className="font-bold mb-1">¿Necesitas asesoría?</div>
         <p className="text-xs opacity-80 mb-3">Nuestros expertos te ayudan a elegir.</p>
-        <a href="https://wa.me/593999999999" target="_blank" rel="noreferrer" className="block bg-whatsapp text-center py-2 rounded font-bold">WhatsApp</a>
+        <a href="https://wa.me/593989955400" target="_blank" rel="noreferrer" className="block bg-whatsapp text-center py-2 rounded font-bold">WhatsApp</a>
       </div>
     </div>
   );

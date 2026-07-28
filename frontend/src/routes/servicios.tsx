@@ -158,7 +158,7 @@ export default function Servicios() {
             <p className="text-white/85 mt-2 text-sm">Diagnóstico gratuito y cotización sin compromiso.</p>
             <div className="grid grid-cols-2 gap-3 mt-5">
               <Link to="/contacto" className="bg-brand-red hover:bg-brand-red-dark text-center py-3 rounded font-bold">Contactar</Link>
-              <a href="https://wa.me/593999999999" target="_blank" rel="noreferrer" className="bg-whatsapp hover:opacity-90 text-center py-3 rounded font-bold">WhatsApp</a>
+              <a href="https://wa.me/593989955400" target="_blank" rel="noreferrer" className="bg-whatsapp hover:opacity-90 text-center py-3 rounded font-bold">WhatsApp</a>
             </div>
           </div>
         </div>

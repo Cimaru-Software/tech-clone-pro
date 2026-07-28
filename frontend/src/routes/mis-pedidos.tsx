@@ -92,7 +92,7 @@ export default function MisPedidosPage() {
                     <div className="font-bold">Tu comprobante fue rechazado.</div>
                     {p.motivoRechazo && <div className="mt-1">Motivo: {p.motivoRechazo}</div>}
                     <a
-                      href="https://wa.me/593999999999"
+                      href="https://wa.me/593989955400"
                       target="_blank"
                       rel="noreferrer"
                       className="mt-3 inline-flex items-center gap-2 rounded bg-green-600 px-3 py-2 text-xs font-bold text-white hover:bg-green-700"

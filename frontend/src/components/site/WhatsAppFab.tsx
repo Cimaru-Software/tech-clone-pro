@@ -14,7 +14,7 @@ export function WhatsAppFab() {
         CONSULTA TU ORDEN
       </a>
       <a
-        href="https://wa.me/593999999999?text=Hola%2C%20necesito%20información"
+        href="https://wa.me/593989955400?text=Hola%2C%20necesito%20información"
         target="_blank"
         rel="noreferrer"
         aria-label="Chatea por WhatsApp"

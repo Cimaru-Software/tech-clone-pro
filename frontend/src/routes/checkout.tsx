@@ -5,6 +5,27 @@ import { useAuth } from "@/contexts/AuthContext";
 import { gaPurchase } from "@/lib/analytics";
 import { CheckCircle2, ChevronRight, Lock, Truck, CreditCard, Upload, Loader2 } from "lucide-react";
 import bakaccounts from "@/assets/bakaccounts.jpeg";
+import cardBolivariano from "@/assets/cards/Banco-Bolivariano-El-Recreo.png";
+import cardLoja from "@/assets/cards/69b8c2e92ca5dc7cb8f36500_ecuador-logo-loja.png";
+import cardPichincha from "@/assets/cards/Banco-Pichincha.png";
+import cardAmazonas from "@/assets/cards/banco-amazonas-logo.png";
+import cardDiners from "@/assets/cards/Logo-Diners-Club.png";
+import cardInternacional from "@/assets/cards/BancoInternacional.png";
+import cardLogoP2 from "@/assets/cards/LOGOP2.jpg.jpeg";
+import cardRuminahui from "@/assets/cards/banco-general-ruminahui-logo-png_seeklogo-256947.png";
+import cardProdubanco from "@/assets/cards/Produbanco.webp";
+
+const CARD_LOGOS = [
+  { src: cardProdubanco, alt: "Produbanco" },
+  { src: cardPichincha, alt: "Banco Pichincha" },
+  { src: cardBolivariano, alt: "Banco Bolivariano" },
+  { src: cardInternacional, alt: "Banco Internacional" },
+  { src: cardDiners, alt: "Diners Club" },
+  { src: cardRuminahui, alt: "Banco Rumiñahui" },
+  { src: cardAmazonas, alt: "Banco Amazonas" },
+  { src: cardLoja, alt: "Banco de Loja" },
+  { src: cardLogoP2, alt: "Banco Manabí" },
+];
 
 declare global {
   interface Window {
@@ -323,6 +344,18 @@ export default function Checkout() {
               <span className={`hidden md:inline font-semibold ${step === i + 1 ? "text-brand-red" : "text-muted-foreground"}`}>{s}</span>
               {i < 3 && <ChevronRight className="h-4 w-4 text-muted-foreground" />}
             </div>
+          ))}
+        </div>
+
+        <div className="mb-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-3 rounded border bg-white px-4 py-4">
+          {CARD_LOGOS.map((card) => (
+            <img
+              key={card.alt}
+              src={card.src}
+              alt={card.alt}
+              title={card.alt}
+              className="h-9 max-w-[110px] w-auto object-contain shrink-0"
+            />
           ))}
         </div>
 

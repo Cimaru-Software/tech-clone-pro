@@ -242,7 +242,7 @@ export default function ProductoDetalle() {
               </button>
 
               <a
-                href="https://wa.me/593999999999"
+                href="https://wa.me/593989955400"
                 target="_blank"
                 rel="noreferrer"
                 className="w-full py-3 rounded-lg font-bold text-sm flex items-center justify-center gap-2 border-2 border-[#25D366] text-[#25D366] hover:bg-[#25D366] hover:text-white transition-all"

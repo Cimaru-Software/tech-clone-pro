@@ -531,7 +531,7 @@ export function Header() {
               <Package className="h-4 w-4" /> CONSULTA TU ORDEN
             </a>
             <a
-              href="https://wa.me/593999999999"
+              href="https://wa.me/593989955400"
               target="_blank"
               rel="noreferrer"
               className="flex items-center gap-2 bg-whatsapp text-white px-3 py-1.5 rounded text-sm font-semibold hover:opacity-90 transition-opacity"
@@ -709,7 +709,7 @@ export function Header() {
               {/* WhatsApp */}
               <div className="p-4">
                 <a
-                  href="https://wa.me/593999999999"
+                  href="https://wa.me/593989955400"
                   target="_blank"
                   rel="noreferrer"
                   onClick={closeMobile}
