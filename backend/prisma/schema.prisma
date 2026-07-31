@@ -155,18 +155,31 @@ enum EstadoProducto {
 }
 
 model Cliente {
+  id                String              @id @default(cuid())
+  nombre            String
+  apellido          String
+  email             String              @unique
+  password          String
+  telefono          String?
+  direccion         String?
+  ciudad            String?
+  pedidos           Pedido[]
+  compras           Compra[]
+  resetTokens       PasswordResetToken[]
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+}
+
+model PasswordResetToken {
   id        String   @id @default(cuid())
-  nombre    String
-  apellido  String
-  email     String   @unique
-  password  String
-  telefono  String?
-  direccion String?
-  ciudad    String?
-  pedidos   Pedido[]
-  compras   Compra[]
+  token     String   @unique
+  clienteId String
+  cliente   Cliente  @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+
+  @@map("password_reset_tokens")
 }
 
 model Pedido {

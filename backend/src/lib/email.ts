@@ -303,6 +303,26 @@ export function receiptRejectedEmail(input: {
   };
 }
 
+export function passwordResetEmail(input: {
+  cliente: Customer;
+  resetUrl: string;
+}) {
+  return {
+    to: input.cliente.email,
+    subject: "Recupera tu contraseña",
+    preheader: "Solicitaste restablecer tu contraseña.",
+    title: "Recupera tu contraseña",
+    intro: `Hola ${input.cliente.nombre || ""}, recibimos una solicitud para restablecer tu contraseña. Si no fuiste tú, puedes ignorar este correo.`,
+    content: `
+      <p style="margin:0;font-size:14px;line-height:1.6;color:${brand.muted};">
+        Este enlace es válido por 1 hora. Si el botón no funciona, copia y pega esta dirección en tu navegador:<br />
+        <span style="word-break:break-all;">${input.resetUrl}</span>
+      </p>
+    `,
+    action: { label: "Restablecer contraseña", href: input.resetUrl },
+  };
+}
+
 export function orderDeliveredEmail(input: {
   pedidoId: string;
   cliente: Customer;

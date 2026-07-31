@@ -15,4 +15,8 @@ export const authService = {
     apiFetch<{ ok: boolean; cliente: Cliente }>("/api/me", { method: "PATCH", body: JSON.stringify(data) }),
   updatePassword: (data: { passwordActual: string; passwordNueva: string }) =>
     apiFetch<{ ok: boolean; message: string }>("/api/me", { method: "PATCH", body: JSON.stringify(data) }),
+  forgotPassword: (data: { email: string }) =>
+    apiFetch<{ ok: boolean; message: string }>("/api/auth/cliente/forgot-password", { method: "POST", body: JSON.stringify(data) }),
+  resetPassword: (data: { token: string; password: string }) =>
+    apiFetch<{ ok: boolean; message: string }>("/api/auth/cliente/reset-password", { method: "POST", body: JSON.stringify(data) }),
 };

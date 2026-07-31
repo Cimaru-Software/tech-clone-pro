@@ -11,6 +11,8 @@ import Nosotros from "@/routes/nosotros";
 import Contacto from "@/routes/contacto";
 import LoginPage from "@/routes/login";
 import RegistroPage from "@/routes/registro";
+import OlvidePasswordPage from "@/routes/olvide-password";
+import RestablecerPasswordPage from "@/routes/restablecer-password";
 import Checkout from "@/routes/checkout";
 import PerfilPage from "@/routes/perfil";
 import MisPedidosPage from "@/routes/mis-pedidos";
@@ -34,6 +36,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route path="contacto" element={<Contacto />} />
           <Route path="login" element={<LoginPage />} />
           <Route path="registro" element={<RegistroPage />} />
+          <Route path="olvide-password" element={<OlvidePasswordPage />} />
+          <Route path="restablecer-password" element={<RestablecerPasswordPage />} />
           <Route path="checkout" element={<Checkout />} />
           <Route path="perfil" element={<PerfilPage />} />
           <Route path="mis-pedidos" element={<MisPedidosPage />} />
