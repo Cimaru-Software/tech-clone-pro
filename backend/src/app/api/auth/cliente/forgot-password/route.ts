@@ -9,6 +9,7 @@ const schema = z.object({
 });
 
 function getFrontendBaseUrl() {
+  if (process.env.FRONTEND_URL) return process.env.FRONTEND_URL;
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
   return apiUrl.replace(":3001", ":5173");
 }
