@@ -36,8 +36,8 @@
         PayboxLanguage: "es",
         PayboxDirection: "",
         PayBoxClientPhone: "",
-        PayboxProduction: false,
-        PayboxEnvironment: "sandbox",
+        PayboxProduction: true,
+        PayboxEnvironment: "prod",
         PayboxPagoPlux: false,
         PayboxPermitirBloquearDiferimientos: true,
         PayboxPermitirDatosAdicionales: false,
@@ -56,7 +56,7 @@
     <!-- 3. Script de Plux - se carga después de jQuery y var data -->
     <!-- Plux registra su handler en jQuery(window).on("load", ...) -->
     <!-- e inyecta el botón #pay dentro de #ButtonPaybox durante ese evento -->
-    <script src="https://sandbox-paybox.pagoplux.com/paybox/index.js"></script>
+    <script src="https://paybox.pagoplux.com/paybox/index.js"></script>
   </head>
   <body>
     <!-- 4. #ButtonPaybox debe existir en el HTML estático cuando window.load dispara -->
