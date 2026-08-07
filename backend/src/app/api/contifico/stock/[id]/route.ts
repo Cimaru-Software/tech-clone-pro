@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getStock, stockTotal } from "@/lib/contifico";
+import { getExistenciasBodegaEcommerce } from "@/lib/contifico";
 
 // Consulta stock en tiempo real desde Contífico para un producto por ID local
 export async function GET(
@@ -22,8 +22,8 @@ export async function GET(
   }
 
   try {
-    const bodegas = await getStock(producto.contificoId);
-    const total = stockTotal(bodegas);
+    const existencias = await getExistenciasBodegaEcommerce();
+    const total = Math.max(0, existencias.get(producto.contificoId) ?? 0);
 
     // Actualizar stock en BD local para mantenerlo fresco
     await prisma.producto.update({
@@ -31,7 +31,7 @@ export async function GET(
       data: { stock: total, lastSyncedAt: new Date() },
     });
 
-    return NextResponse.json({ stock: total, bodegas, fuente: "contifico" });
+    return NextResponse.json({ stock: total, bodegas: [], fuente: "contifico_bodega_ecommerce" });
   } catch (err) {
     // Si Contífico falla devolvemos el stock local como fallback
     return NextResponse.json(

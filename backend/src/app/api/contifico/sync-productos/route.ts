@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
       if (!precioStr || precioStr === "0") continue;
 
       try {
-        // cantidad_stock ya viene filtrado por Bodega Ecommerce desde getProductos()
+        // getProductos calculó el kardex únicamente de Bodega Ecommerce.
         const stockActual = cp.cantidad_stock ?? 0;
 
         const precio = parseFloat(precioStr) || 0;

@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
                   return;
                 }
 
-                // cantidad_stock ya viene filtrado por Bodega Ecommerce desde getProductos()
+                // getProductos calculó el kardex únicamente de Bodega Ecommerce.
                 const stockActual = cp.cantidad_stock ?? 0;
                 const precio = parseFloat(precioStr) || 0;
                 const ivaPorc = String(cp.porcentaje_iva ?? "15");

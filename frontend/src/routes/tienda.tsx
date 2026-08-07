@@ -228,13 +228,19 @@ export default function Tienda() {
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [maxPrice, setMaxPrice] = useState(5000);
   const [sort, setSort] = useState("relevance");
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
   const [productos, setProductos] = useState<Producto[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 24;
+
+  // Keep the store filter in sync with searches submitted from the header.
+  // This also handles a new search while the user is already on /tienda.
+  useEffect(() => {
+    setSearch(searchParams.get("q") ?? "");
+  }, [searchParams]);
 
   useEffect(() => {
     let active = true;

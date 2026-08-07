@@ -51,7 +51,7 @@ export interface ContificoProducto {
 export interface ContificoStock {
   bodega_id: string;
   bodega_nombre: string;
-  cantidad: number;
+  cantidad: number | string;
 }
 
 export interface ContificoDocumentoDetalle {
@@ -100,13 +100,14 @@ export interface ContificoCliente {
 }
 
 
-// Obtiene los IDs de productos que tienen movimientos en la Bodega Ecommerce.
-// El endpoint /movimiento-inventario/?bodega_id=X sí filtra correctamente por bodega.
-async function getProductIdsBodegaEcommerce(): Promise<Set<string>> {
+// Calcula la existencia por producto usando el kardex de Bodega Ecommerce.
+// El endpoint /producto/<ID>/stock solo incluye bodegas asociadas a un punto de
+// venta, por lo que no es una fuente válida para esta bodega.
+export async function getExistenciasBodegaEcommerce(): Promise<Map<string, number>> {
   const bodegaId = process.env.CONTIFICO_BODEGA_ID;
   if (!bodegaId) throw new Error("CONTIFICO_BODEGA_ID no configurado");
 
-  const ids = new Set<string>();
+  const existencias = new Map<string, number>();
   let page = 1;
 
   while (true) {
@@ -121,12 +122,34 @@ async function getProductIdsBodegaEcommerce(): Promise<Set<string>> {
     const raw = await res.text();
     // La API a veces devuelve múltiples objetos JSON concatenados — tomamos la primera línea
     const data = JSON.parse(raw.split("\n")[0]);
-    const results: Array<{ detalles: Array<{ producto_id: string }> }> =
-      data.results ?? [];
+    const results: Array<{
+      bodega_id: string;
+      bodega_destino_id?: string | null;
+      tipo: string;
+      estado: string;
+      detalles: Array<{ producto_id: string; cantidad: number | string }>;
+    }> = data.results ?? [];
 
     for (const mov of results) {
+      if (mov.estado !== "G") continue;
+      // Contífico puede ignorar el query bodega_id e incluir otras bodegas.
+      // En transferencias, la bodega ecommerce puede ser origen o destino.
+      if (mov.bodega_id !== bodegaId && mov.bodega_destino_id !== bodegaId) continue;
+
+      let signo = 0;
+      if (mov.tipo === "ING" && mov.bodega_id === bodegaId) signo = 1;
+      if (mov.tipo === "EGR" && mov.bodega_id === bodegaId) signo = -1;
+      if (mov.tipo === "TRA" && mov.bodega_id === bodegaId) signo = -1;
+      if (mov.tipo === "TRA" && mov.bodega_destino_id === bodegaId) signo = 1;
+      if (signo === 0) continue;
+
       for (const det of mov.detalles ?? []) {
-        if (det.producto_id) ids.add(det.producto_id);
+        if (!det.producto_id) continue;
+        const cantidad = parseFloat(String(det.cantidad)) || 0;
+        existencias.set(
+          det.producto_id,
+          (existencias.get(det.producto_id) ?? 0) + signo * cantidad
+        );
       }
     }
 
@@ -137,7 +160,7 @@ async function getProductIdsBodegaEcommerce(): Promise<Set<string>> {
     }
   }
 
-  return ids;
+  return existencias;
 }
 
 async function fetchProductosPage(page: number): Promise<{ results: ContificoProducto[]; count: number }> {
@@ -160,10 +183,10 @@ async function fetchProductosPage(page: number): Promise<{ results: ContificoPro
 export async function getProductos(
   onProgress?: (traidos: number, total: number) => void
 ): Promise<ContificoProducto[]> {
-  // Paso 1: obtener IDs de productos con movimientos en bodega ecommerce
-  const idsEcommerce = await getProductIdsBodegaEcommerce();
+  // Paso 1: calcular el stock de productos de Bodega Ecommerce desde su kardex.
+  const existenciasEcommerce = await getExistenciasBodegaEcommerce();
 
-  if (idsEcommerce.size === 0) return [];
+  if (existenciasEcommerce.size === 0) return [];
 
   // Paso 2: obtener todos los productos y filtrar por esos IDs
   const primera = await fetchProductosPage(1);
@@ -172,7 +195,7 @@ export async function getProductos(
   const totalPaginas = Math.ceil(primera.count / PER_PAGE);
 
   for (const p of primera.results) {
-    if (idsEcommerce.has(p.id)) todos.push(p);
+    if (existenciasEcommerce.has(p.id)) todos.push(p);
   }
   onProgress?.(primera.results.length, primera.count);
 
@@ -185,14 +208,19 @@ export async function getProductos(
     const paginas = await Promise.all(lote.map(fetchProductosPage));
     for (const pagina of paginas) {
       for (const p of pagina.results) {
-        if (idsEcommerce.has(p.id)) todos.push(p);
+        if (existenciasEcommerce.has(p.id)) todos.push(p);
       }
       traidos += pagina.results.length;
     }
     onProgress?.(traidos, primera.count);
   }
 
-  return todos;
+  // cantidad_stock del catálogo es global; se reemplaza por la existencia
+  // calculada exclusivamente para Bodega Ecommerce.
+  return todos.map((producto) => ({
+    ...producto,
+    cantidad_stock: Math.max(0, Math.trunc(existenciasEcommerce.get(producto.id) ?? 0)),
+  }));
 }
 
 export async function getProducto(id: string): Promise<ContificoProducto> {
@@ -262,10 +290,16 @@ export async function getSeriales(): Promise<ContificoSerial[]> {
     }
     const raw = await res.text();
     const data = JSON.parse(raw.split("\n")[0]);
-    const results: Array<{ tipo: string; detalles: Array<{ producto_id: string; serie: string | null }> }> =
-      data.results ?? [];
+    const results: Array<{
+      tipo: string;
+      bodega_id: string;
+      detalles: Array<{ producto_id: string; serie: string | null }>;
+    }> = data.results ?? [];
 
     for (const mov of results) {
+      // No confiar únicamente en los filtros del endpoint: la API puede
+      // devolver movimientos de otras bodegas o de otro tipo.
+      if (mov.bodega_id !== bodegaId || mov.tipo !== "ING") continue;
       for (const det of mov.detalles ?? []) {
         if (det.serie) {
           seriales.push({ productoId: det.producto_id, serial: det.serie });
@@ -283,13 +317,20 @@ export async function getSeriales(): Promise<ContificoSerial[]> {
   return seriales;
 }
 
-export function stockTotal(bodegas: ContificoStock[]): number {
+export function getStockBodegaEcommerce(bodegas: ContificoStock[]): ContificoStock[] {
   const bodegaId = process.env.CONTIFICO_BODEGA_ID;
-  const fuente = bodegaId
-    ? bodegas.filter((b) => b.bodega_id === bodegaId)
-    : bodegas;
+  if (!bodegaId) throw new Error("CONTIFICO_BODEGA_ID no configurado");
+
+  return bodegas.filter((b) => b.bodega_id === bodegaId);
+}
+
+function sumarStock(bodegas: ContificoStock[]): number {
   // v2 devuelve cantidad como string ("5.00"), parseamos por si acaso
-  return fuente.reduce((sum, b) => sum + (parseFloat(String(b.cantidad)) || 0), 0);
+  return bodegas.reduce((sum, b) => sum + (parseFloat(String(b.cantidad)) || 0), 0);
+}
+
+export function stockTotal(bodegas: ContificoStock[]): number {
+  return sumarStock(getStockBodegaEcommerce(bodegas));
 }
 
 export function buildDocumentoFromPedido(params: {
