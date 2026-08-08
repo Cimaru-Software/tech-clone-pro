@@ -349,6 +349,8 @@ export function buildDocumentoFromPedido(params: {
 }): ContificoDocumento {
   const pos = process.env.CONTIFICO_BILLING_POS_ID || process.env.CONTIFICO_BILLING_API_TOKEN;
   if (!pos) throw new Error("CONTIFICO_BILLING_POS_ID o CONTIFICO_BILLING_API_TOKEN no configurado");
+  const bodegaNombre = process.env.CONTIFICO_BODEGA_NOMBRE || "BODEGA ECOMMERCE";
+  const referenciaBodega = `BODEGA: ${bodegaNombre.toUpperCase()}`;
 
   let subtotal0 = 0;
   let subtotal12 = 0;
@@ -394,7 +396,7 @@ export function buildDocumentoFromPedido(params: {
     iva: Math.round(iva * 100) / 100,
     total: Math.round(total * 100) / 100,
     adicional1: params.descripcion,
-    adicional2: "",
+    adicional2: referenciaBodega,
     cliente: params.cliente,
     detalles,
   };

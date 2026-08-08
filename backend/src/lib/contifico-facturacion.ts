@@ -182,7 +182,7 @@ export async function emitirFacturaContifico(compraId: string) {
       fechaEmision: todayEc(),
       documento: buildNumeroDocumento(compra.id),
       autorizacion: buildAutorizacion(compra.id),
-      descripcion: `Compra e-commerce #${compra.id}`,
+      descripcion: `Compra e-commerce #${compra.id} | BODEGA: BODEGA ECOMMERCE`,
       cliente: buildCliente(compra),
       items: buildItems(compra),
     });

@@ -51,7 +51,10 @@ function FeaturedProductCard({ producto }: { producto: Producto }) {
         <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{producto.descripcion}</p>
         <div className="mt-2">
           {producto.descuento > 0 && <div className="text-xs text-muted-foreground line-through">${precio.toFixed(2)}</div>}
-          <div className="text-xl font-black text-brand-blue">${precioFinal.toFixed(2)}</div>
+          <div className="text-xl font-black text-brand-blue">
+            ${precioFinal.toFixed(2)}
+            <span className="text-xs font-normal text-muted-foreground ml-1">+ IVA</span>
+          </div>
         </div>
         <button
           onClick={(e) => { e.preventDefault(); if (producto.stock > 0) add(producto); }}
