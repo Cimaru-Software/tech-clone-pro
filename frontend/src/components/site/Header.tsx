@@ -180,7 +180,7 @@ export function Header() {
 
           {/* Burger button - mobile only */}
           <button
-            className="md:hidden p-2 -ml-1 rounded-md hover:bg-secondary transition-colors"
+            className="lg:hidden p-2 -ml-1 rounded-md hover:bg-secondary transition-colors"
             onClick={() => setMobileOpen((v) => !v)}
             aria-label="Abrir menú"
             aria-expanded={mobileOpen}
@@ -265,13 +265,13 @@ export function Header() {
                 </span>
               )}
             </div>
-            <span className="hidden md:inline text-sm font-semibold">Carrito</span>
+            <span className="hidden lg:inline text-sm font-semibold">Carrito</span>
           </button>
 
           {/* Account – desktop only */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="hidden md:flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm hover:border-brand-blue hover:bg-secondary/70 transition-colors shrink-0">
+              <button className="hidden lg:flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm hover:border-brand-blue hover:bg-secondary/70 transition-colors shrink-0">
                 <span className="grid h-9 w-9 place-items-center rounded-full bg-brand-blue/10 text-brand-blue shrink-0">
                   <User className="h-5 w-5" />
                 </span>
@@ -379,7 +379,7 @@ export function Header() {
       </div>
 
       {/* NAV ROW – desktop */}
-      <div className="hidden md:block bg-white border-b">
+      <div className="hidden lg:block bg-white border-b">
         <div className="container-x flex items-center h-12 gap-1">
 
           {/* Categorías mega-menu – dos columnas: lista + subcategorías */}
@@ -544,7 +544,7 @@ export function Header() {
 
       {/* ===== MOBILE MENU OVERLAY ===== */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-50 md:hidden" aria-modal="true" role="dialog">
+        <div className="fixed inset-0 z-50 lg:hidden" aria-modal="true" role="dialog">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={closeMobile} />
 
           <div className="absolute top-0 left-0 h-full w-[85vw] max-w-sm bg-white shadow-2xl flex flex-col overflow-hidden">
