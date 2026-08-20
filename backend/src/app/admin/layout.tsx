@@ -49,6 +49,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             { href: "/admin/noticias", label: "📰  Noticias" },
             { href: "/admin/clientes", label: "👥  Clientes" },
             { href: "/admin/pedidos", label: "🛒  Pedidos" },
+            { href: "/admin/reportes", label: "📈  Reportería" },
             { href: "/admin/comprobantes", label: "✅  Validación de comprobantes" },
             { href: "/admin/parametros", label: "⚙️  Parámetros" },
           ].map((item) => (

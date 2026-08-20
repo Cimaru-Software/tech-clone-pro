@@ -290,7 +290,13 @@ export default function Tienda() {
       r = r.filter((p) => p.categoria?.slug === selectedCat);
     }
     if (selectedBrands.length) r = r.filter((p) => selectedBrands.includes(p.marca));
-    if (search.trim()) r = r.filter((p) => p.nombre.toLowerCase().includes(search.toLowerCase()) || p.marca.toLowerCase().includes(search.toLowerCase()));
+    if (search.trim()) {
+      const words = search.toLowerCase().trim().split(/\s+/);
+      r = r.filter((p) => {
+        const haystack = `${p.nombre} ${p.marca}`.toLowerCase();
+        return words.every((w) => haystack.includes(w));
+      });
+    }
     if (sort === "price-asc") r = [...r].sort((a, b) => Number(a.precio) - Number(b.precio));
     if (sort === "price-desc") r = [...r].sort((a, b) => Number(b.precio) - Number(a.precio));
     if (sort === "descuento") r = [...r].sort((a, b) => b.descuento - a.descuento);

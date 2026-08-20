@@ -54,6 +54,26 @@ export interface ContificoStock {
   cantidad: number | string;
 }
 
+export interface ContificoBodega {
+  id: string;
+  nombre: string;
+}
+
+export interface ContificoMovimientoDetalle {
+  producto_id: string;
+  cantidad: number;
+  precio?: number;
+  serie?: string | null;
+}
+
+export interface ContificoMovimientoInventario {
+  bodega_id: string;
+  tipo: "ING" | "EGR" | "TRA" | "AJU";
+  fecha: string; // dd/MM/yyyy
+  descripcion: string;
+  detalles: ContificoMovimientoDetalle[];
+}
+
 export interface ContificoDocumentoDetalle {
   producto_id: string;
   cantidad: number;
@@ -246,6 +266,68 @@ export async function getStock(id: string): Promise<ContificoStock[]> {
   }
   const data = await res.json();
   return Array.isArray(data) ? data : data.results ?? [];
+}
+
+// Busca en Contífico el ID de la bodega por nombre (ej. "BODEGA ECOMMERCE").
+// Usamos esto para resolver dinámicamente el bodega_id en vez de depender
+// únicamente del env var, y para validar que CONTIFICO_BODEGA_ID corresponde
+// al nombre configurado en CONTIFICO_BODEGA_NOMBRE.
+export async function getBodegaPorNombre(nombre: string): Promise<ContificoBodega | null> {
+  let page = 1;
+  const nombreNormalizado = nombre.trim().toLowerCase();
+
+  while (true) {
+    const res = await fetch(`${BASE_URL_V1}/bodega/?format=json&page=${page}`, {
+      headers: headers("sync"),
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Contífico getBodegaPorNombre: ${res.status} ${text}`);
+    }
+    const data = await res.json();
+    const results: ContificoBodega[] = data.results ?? data ?? [];
+
+    const match = results.find((b) => b.nombre?.trim().toLowerCase() === nombreNormalizado);
+    if (match) return match;
+
+    if (data.next) {
+      page++;
+    } else {
+      return null;
+    }
+  }
+}
+
+// Resuelve el bodega_id a usar para movimientos de inventario de e-commerce:
+// prioriza CONTIFICO_BODEGA_ID (env) pero, si no está configurado, lo busca
+// en Contífico por el nombre en CONTIFICO_BODEGA_NOMBRE ("BODEGA ECOMMERCE").
+export async function resolveBodegaEcommerceId(): Promise<string> {
+  const bodegaIdEnv = process.env.CONTIFICO_BODEGA_ID;
+  if (bodegaIdEnv) return bodegaIdEnv;
+
+  const nombre = process.env.CONTIFICO_BODEGA_NOMBRE || "BODEGA ECOMMERCE";
+  const bodega = await getBodegaPorNombre(nombre);
+  if (!bodega) throw new Error(`No se encontró en Contífico la bodega "${nombre}"`);
+  return bodega.id;
+}
+
+// Crea un movimiento de egreso (EGR) en Contífico para descontar stock de
+// la bodega ecommerce tras una venta facturada.
+export async function crearMovimientoEgreso(
+  mov: Omit<ContificoMovimientoInventario, "tipo">
+): Promise<{ id: string }> {
+  const body: ContificoMovimientoInventario = { ...mov, tipo: "EGR" };
+  const res = await fetch(`${BASE_URL_V1}/movimiento-inventario/?format=json`, {
+    method: "POST",
+    headers: headers("billing"),
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Contífico crearMovimientoEgreso: ${res.status} ${text}`);
+  }
+  return res.json();
 }
 
 export async function crearDocumento(

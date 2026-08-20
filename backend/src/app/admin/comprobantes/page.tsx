@@ -45,7 +45,7 @@ export default function ComprobantesPage() {
 
   async function fetchCompras() {
     setLoading(true);
-    const res = await fetch("/api/compras");
+    const res = await fetch("/api/compras?metodoPago=transfer");
     const data = await res.json();
     setCompras(data.compras || []);
     setLoading(false);
@@ -126,7 +126,7 @@ export default function ComprobantesPage() {
 
   return (
     <div>
-      <h1 style={{ fontSize: "1.5rem", fontWeight: "700", color: "#111827", marginBottom: "1rem" }}>Validación de comprobantes ({compras.length})</h1>
+      <h1 style={{ fontSize: "1.5rem", fontWeight: "700", color: "#111827", marginBottom: "1rem" }}>Validación de comprobantes — Transferencias ({compras.length})</h1>
       <div style={{ background: "white", borderRadius: "12px", padding: "1rem 1.25rem", marginBottom: "1rem", boxShadow: "0 1px 4px rgba(0,0,0,0.06)", display: "flex", flexWrap: "wrap", gap: "0.75rem", alignItems: "center" }}>
         <div style={{ position: "relative", flex: "1", minWidth: "240px" }}>
           <span style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", color: "#94a3b8", fontSize: "0.9rem" }}>🔍</span>
@@ -186,7 +186,7 @@ export default function ComprobantesPage() {
                     <div style={{ display: "grid", gridTemplateColumns: "220px 1fr", gap: "1rem", alignItems: "start" }}>
                       {c.comprobantePath
                         ? <img src={c.comprobantePath} alt="Comprobante" style={{ width: "220px", maxHeight: "280px", objectFit: "contain", background: "white", border: "1px solid #e5e7eb", borderRadius: "8px" }} />
-                        : <div style={{ width: "220px", height: "80px", display: "flex", alignItems: "center", justifyContent: "center", background: "#f3f4f6", borderRadius: "8px", fontSize: "0.8rem", color: "#6b7280" }}>Pago con tarjeta</div>
+                        : <div style={{ width: "220px", height: "80px", display: "flex", alignItems: "center", justifyContent: "center", background: "#f3f4f6", borderRadius: "8px", fontSize: "0.8rem", color: "#6b7280" }}>Sin comprobante</div>
                       }
                       <div>
                         <div style={{ fontSize: "0.875rem", marginBottom: "0.75rem" }}>

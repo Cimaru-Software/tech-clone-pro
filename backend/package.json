@@ -25,6 +25,7 @@
     "@tiptap/starter-kit": "^3.23.1",
     "autoprefixer": "^10.4.20",
     "bcryptjs": "^2.4.3",
+    "chart.js": "^4.5.1",
     "cookies-next": "^4.3.0",
     "jose": "^5.9.6",
     "jsonwebtoken": "^9.0.2",
@@ -32,11 +33,13 @@
     "nodemailer": "^8.0.7",
     "postcss": "^8.4.49",
     "react": "^18.3.1",
+    "react-chartjs-2": "^5.3.1",
     "react-dom": "^18.3.1",
     "sharp": "^0.33.5",
     "sweetalert2": "^11.26.24",
     "tailwindcss": "^3.4.17",
     "uuid": "^10.0.0",
+    "xlsx": "^0.18.5",
     "zod": "^3.23.8"
   },
   "prisma": {

@@ -1,5 +1,5 @@
 import type { Compra, Prisma } from "@prisma/client";
-import { buildDocumentoFromPedido, crearDocumento } from "@/lib/contifico";
+import { buildDocumentoFromPedido, crearDocumento, crearMovimientoEgreso, resolveBodegaEcommerceId } from "@/lib/contifico";
 import type { ContificoCliente } from "@/lib/contifico";
 import { prisma } from "@/lib/prisma";
 
@@ -177,6 +177,8 @@ export async function emitirFacturaContifico(compraId: string) {
     throw new Error(`Método de pago no facturable: ${compra.metodoPago}`);
   }
 
+  const items = buildItems(compra);
+
   try {
     const doc = buildDocumentoFromPedido({
       fechaEmision: todayEc(),
@@ -184,7 +186,7 @@ export async function emitirFacturaContifico(compraId: string) {
       autorizacion: buildAutorizacion(compra.id),
       descripcion: `Compra e-commerce #${compra.id} | BODEGA: BODEGA ECOMMERCE`,
       cliente: buildCliente(compra),
-      items: buildItems(compra),
+      items,
     });
 
     const resp = await crearDocumento(doc);
@@ -198,9 +200,36 @@ export async function emitirFacturaContifico(compraId: string) {
     });
 
     await logContifico(compra.id, "ok", `Factura emitida: ${resp.id}`);
+    await descontarStockBodegaEcommerce(compra.id, items);
     return factura;
   } catch (err) {
     await logContifico(compra.id, "error", "Error al emitir factura", String(err));
     throw err;
+  }
+}
+
+// Crea un movimiento EGR en Contífico para descontar de BODEGA ECOMMERCE el
+// stock de los productos vendidos. La factura ya fue emitida en este punto;
+// un fallo aquí no debe revertir la factura, solo queda registrado en el log
+// para revisión manual (el stock local ya se descuenta por separado al aprobar la compra).
+async function descontarStockBodegaEcommerce(
+  compraId: string,
+  items: Array<{ contificoId: string; cantidad: number; serie?: string }>
+) {
+  try {
+    const bodegaId = await resolveBodegaEcommerceId();
+    await crearMovimientoEgreso({
+      bodega_id: bodegaId,
+      fecha: todayEc(),
+      descripcion: `Venta e-commerce #${compraId}`,
+      detalles: items.map((item) => ({
+        producto_id: item.contificoId,
+        cantidad: item.cantidad,
+        ...(item.serie ? { serie: item.serie } : {}),
+      })),
+    });
+    await logContifico(compraId, "ok", "Movimiento EGR de inventario creado en BODEGA ECOMMERCE");
+  } catch (err) {
+    await logContifico(compraId, "error", "Error al crear movimiento EGR de inventario", String(err));
   }
 }

@@ -26,10 +26,16 @@ export async function GET(request: NextRequest) {
       ...(destacado === "false" && { destacado: false }),
       ...(conDescuento === "true" && { descuento: { gt: 0 } }),
       ...(search && {
-        OR: [
-          { nombre: { contains: search, mode: "insensitive" } },
-          { marca: { contains: search, mode: "insensitive" } },
-        ],
+        AND: search
+          .trim()
+          .split(/\s+/)
+          .map((word) => ({
+            OR: [
+              { nombre: { contains: word, mode: "insensitive" as const } },
+              { marca: { contains: word, mode: "insensitive" as const } },
+              { descripcion: { contains: word, mode: "insensitive" as const } },
+            ],
+          })),
       }),
     },
     include: {

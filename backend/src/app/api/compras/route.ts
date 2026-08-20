@@ -61,7 +61,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
+  const { searchParams } = new URL(request.url);
+  const metodoPago = searchParams.get("metodoPago");
+
   const compras = await prisma.compra.findMany({
+    where: metodoPago ? { metodoPago } : undefined,
     include: {
       cliente: { select: { nombre: true, apellido: true, email: true } },
       pedido: { select: { id: true, estado: true } },
