@@ -33,14 +33,13 @@ export async function POST(request: NextRequest) {
 
         await prisma.producto.upsert({
           where: { contificoId: cp.id },
+          // En productos existentes solo se sincronizan precio, stock e IVA.
+          // Nombre, descripción, marca, categorías e imágenes se personalizan
+          // en el admin y nunca deben pisarse con los datos de Contífico.
           update: {
-            nombre: cp.nombre,
-            descripcion: cp.descripcion || cp.nombre,
             precio,
             stock: stockActual,
             ivaContificoPorc: ivaPorc,
-            // actualizar marca si viene en v2
-            ...(cp.marca_nombre && cp.marca_nombre !== "-" && { marca: cp.marca_nombre }),
             lastSyncedAt: new Date(),
           },
           create: {
