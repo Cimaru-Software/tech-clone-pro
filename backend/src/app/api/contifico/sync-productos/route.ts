@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyAdminToken } from "@/lib/auth";
-import { getProductos, getSeriales } from "@/lib/contifico";
+import { getPrecioTransferenciaContifico, getProductos, getSeriales } from "@/lib/contifico";
 
 export async function POST(request: NextRequest) {
   const token = request.cookies.get("admin_token")?.value;
@@ -30,14 +30,16 @@ export async function POST(request: NextRequest) {
 
         const precio = parseFloat(precioStr) || 0;
         const ivaPorc = String(cp.porcentaje_iva ?? "15");
+        const precioTransferencia = getPrecioTransferenciaContifico(cp);
 
         await prisma.producto.upsert({
           where: { contificoId: cp.id },
-          // En productos existentes solo se sincronizan precio, stock e IVA.
+          // En productos existentes solo se sincronizan precios (PVP1 y PVP3), stock e IVA.
           // Nombre, descripción, marca, categorías e imágenes se personalizan
           // en el admin y nunca deben pisarse con los datos de Contífico.
           update: {
             precio,
+            precioTransferencia,
             stock: stockActual,
             ivaContificoPorc: ivaPorc,
             lastSyncedAt: new Date(),
@@ -49,6 +51,7 @@ export async function POST(request: NextRequest) {
             marca: cp.marca_nombre || "-",
             descripcion: cp.descripcion || cp.nombre,
             precio,
+            precioTransferencia,
             stock: stockActual,
             ivaContificoPorc: ivaPorc,
             lastSyncedAt: new Date(),

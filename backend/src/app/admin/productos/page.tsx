@@ -790,14 +790,9 @@ export default function ProductosPage() {
                   <input style={inputStyle} type="number" min="0" max="100" value={form.descuento} onChange={e => setForm(f => ({ ...f, descuento: Number(e.target.value) }))} />
                 </div>
                 <div>
-                  <label style={labelStyle}>Precio transferencia ($) <span style={{ fontWeight: 400, color: "#94a3b8" }}>opcional</span></label>
+                  <label style={labelStyle}>Precio transferencia ($) <span style={{ fontWeight: 400, color: "#94a3b8" }}>PVP3 · IVA incluido</span></label>
                   <input style={inputStyle} type="number" min="0" step="0.01" placeholder="Sin precio de transferencia" value={form.precioTransferencia} onChange={e => setForm(f => ({ ...f, precioTransferencia: e.target.value }))} />
-                  {(() => {
-                    const pt = Number(form.precioTransferencia);
-                    const normal = Number(form.precio) * (1 - Math.min(Number(form.descuento) || 0, 100) / 100);
-                    if (!form.precioTransferencia.trim() || !(pt > 0) || pt < normal) return null;
-                    return <div style={{ fontSize: "0.7rem", color: "#b45309", marginTop: "0.25rem" }}>Debe ser menor al precio normal (${normal.toFixed(2)}) para mostrarse y aplicarse.</div>;
-                  })()}
+                  <div style={{ fontSize: "0.7rem", color: "#64748b", marginTop: "0.25rem" }}>Se actualiza con el PVP3 al sincronizar con Contífico.</div>
                 </div>
                 <div>
                   <label style={labelStyle}>Stock</label>

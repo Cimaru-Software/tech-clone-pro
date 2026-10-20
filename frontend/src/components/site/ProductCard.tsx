@@ -31,7 +31,7 @@ export function ProductCard({ product }: { product: Product }) {
           )}
           <div className="text-xl font-black text-brand-blue">
             ${product.price.toFixed(2)}
-            <span className="text-xs font-normal text-muted-foreground ml-1">+ IVA</span>
+            <span className="text-xs font-normal text-muted-foreground ml-1">IVA incluido</span>
           </div>
         </div>
         <button

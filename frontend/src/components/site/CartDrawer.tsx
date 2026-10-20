@@ -34,7 +34,7 @@ export function CartDrawer() {
                 )}
                 <div className="text-brand-blue font-bold">
                   ${i.precio.toFixed(2)}
-                  <span className="text-xs font-normal text-muted-foreground ml-1">+ IVA</span>
+                  <span className="text-xs font-normal text-muted-foreground ml-1">IVA incluido</span>
                 </div>
                 {i.precioTransferencia != null && (
                   <div className="text-xs font-bold text-brand-red">Transferencia: ${i.precioTransferencia.toFixed(2)}</div>
@@ -52,10 +52,10 @@ export function CartDrawer() {
         {items.length > 0 && (
           <div className="border-t p-4 space-y-3">
             <div className="flex justify-between text-sm"><span>Subtotal</span><span className="font-bold">${subtotal.toFixed(2)}</span></div>
-            {subtotalTransferencia < subtotal && (
+            {subtotalTransferencia !== subtotal && (
               <div className="flex justify-between text-sm font-bold text-brand-red"><span>Pagando por transferencia</span><span>${subtotalTransferencia.toFixed(2)}</span></div>
             )}
-            <div className="text-xs text-muted-foreground">El envío y los impuestos se calculan en el checkout</div>
+            <div className="text-xs text-muted-foreground">Precios con IVA incluido. El envío se calcula en el checkout</div>
             <Link
               to="/checkout"
               onClick={() => {

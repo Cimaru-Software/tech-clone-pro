@@ -91,11 +91,12 @@ export default function Checkout() {
 
   // El precio de transferencia se aplica automáticamente al elegir "Transferencia" como método de pago.
   const aplicaTransferencia = metodoPago === "transfer" && step >= 3;
-  const ahorroTransferencia = Math.max(0, subtotalNormal - subtotalTransferencia);
+  const ahorroTransferencia = subtotalNormal - subtotalTransferencia;
   const subtotal = aplicaTransferencia ? subtotalTransferencia : subtotalNormal;
   const shipping = shipping_form.provincia ? (enviosPorProvincia[shipping_form.provincia] ?? 8) : 0;
-  const tax = subtotal * (ivaPorcentaje / 100);
-  const total = subtotal + shipping + tax;
+  // Los precios ya incluyen IVA: solo se desglosa a modo informativo.
+  const tax = subtotal - subtotal / (1 + ivaPorcentaje / 100);
+  const total = subtotal + shipping;
 
   useEffect(() => {
     if (!cliente) return;
@@ -492,7 +493,7 @@ export default function Checkout() {
                   <h2 className="text-xl font-black text-brand-blue mb-4 flex items-center gap-2"><CreditCard className="h-5 w-5" /> 3. Método de pago</h2>
                   <div className="space-y-3">
                     {[
-                      { v: "transfer", t: "Transferencia bancaria", d: ahorroTransferencia > 0 ? `Carga el comprobante para validar tu compra. Se aplica el precio transferencia: ahorras $${ahorroTransferencia.toFixed(2)} + IVA` : "Carga el comprobante para validar tu compra" },
+                      { v: "transfer", t: "Transferencia bancaria", d: ahorroTransferencia > 0 ? `Carga el comprobante para validar tu compra. Se aplica el precio transferencia: ahorras $${ahorroTransferencia.toFixed(2)}` : "Carga el comprobante para validar tu compra" },
                       { v: "card", t: "Tarjeta de crédito / débito", d: "Aceptamos tarjetas Produbanco, Bolivariano, Banco Internacional, Diners Club, Pichincha, Rumiñahui, Manabí, Loja, Amazonas" },
                     ].map((m) => (
                       <label key={m.v} className="flex items-start gap-3 border rounded p-3 has-[:checked]:border-brand-red has-[:checked]:bg-secondary cursor-pointer hover:border-brand-red">
@@ -598,15 +599,20 @@ export default function Checkout() {
                 {aplicaTransferencia && ahorroTransferencia > 0 && (
                   <div className="flex justify-between font-semibold text-brand-red"><span>Descuento precio transferencia</span><span>−${ahorroTransferencia.toFixed(2)}</span></div>
                 )}
+                {aplicaTransferencia && ahorroTransferencia < 0 && (
+                  <div className="flex justify-between font-semibold"><span>Ajuste precio transferencia</span><span>+${(-ahorroTransferencia).toFixed(2)}</span></div>
+                )}
                 <div className="flex justify-between"><span>Envío</span><span>{!shipping_form.provincia ? "Selecciona tu provincia" : shipping === 0 ? "GRATIS" : `$${shipping.toFixed(2)}`}</span></div>
-                <div className="flex justify-between"><span>IVA ({ivaPorcentaje}%)</span><span>${tax.toFixed(2)}</span></div>
               </div>
               <div className="flex justify-between font-black text-lg text-brand-blue mt-3">
                 <span>Total</span><span>${total.toFixed(2)}</span>
               </div>
+              <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                <span>Incluye IVA ({ivaPorcentaje}%)</span><span>${tax.toFixed(2)}</span>
+              </div>
               {!aplicaTransferencia && ahorroTransferencia > 0 && (
                 <div className="mt-3 rounded border border-brand-red/40 bg-brand-red/5 p-2 text-xs text-brand-red font-semibold">
-                  Paga por transferencia y ahorra ${ahorroTransferencia.toFixed(2)} + IVA
+                  Paga por transferencia y ahorra ${ahorroTransferencia.toFixed(2)}
                 </div>
               )}
               <div className="bg-secondary rounded p-2 text-xs mt-4 flex items-center gap-2">

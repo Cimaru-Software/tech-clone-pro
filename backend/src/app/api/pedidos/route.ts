@@ -23,12 +23,12 @@ function getPrecioFinal(precio: unknown, descuento: number) {
   return Number((base * (1 - Math.min(descuento, 100) / 100)).toFixed(2));
 }
 
-// Con transferencia se usa el precio de transferencia si existe y es menor al precio normal.
+// Con transferencia se usa el precio de transferencia (PVP3 de Contífico) tal cual, si existe.
 function getPrecioSegunPago(producto: { precio: unknown; descuento: number; precioTransferencia: unknown }, metodoPago: string) {
   const precioNormal = getPrecioFinal(producto.precio, producto.descuento);
   if (metodoPago !== "transfer" || producto.precioTransferencia == null) return precioNormal;
   const transferencia = Number(producto.precioTransferencia);
-  if (!Number.isFinite(transferencia) || transferencia <= 0 || transferencia >= precioNormal) return precioNormal;
+  if (!Number.isFinite(transferencia) || transferencia <= 0) return precioNormal;
   return Number(transferencia.toFixed(2));
 }
 

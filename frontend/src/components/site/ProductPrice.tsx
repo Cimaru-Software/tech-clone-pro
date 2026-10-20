@@ -20,7 +20,7 @@ export function ProductPrice({ producto, variant = "card", showIva = true }: Pro
           {tieneDescuento && <div className="text-sm text-muted-foreground line-through">${precio.toFixed(2)}</div>}
           <div className="flex items-end gap-3">
             <span className="text-4xl font-black text-brand-blue">${precioNormal.toFixed(2)}</span>
-            <span className="text-sm font-normal text-muted-foreground mb-1">+ IVA</span>
+            <span className="text-sm font-normal text-muted-foreground mb-1">IVA incluido</span>
             {tieneDescuento && (
               <span className="text-sm font-bold text-green-600 mb-1">Ahorras ${(precio - precioNormal).toFixed(2)}</span>
             )}
@@ -43,10 +43,12 @@ export function ProductPrice({ producto, variant = "card", showIva = true }: Pro
           </div>
         </div>
         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-          <span className="text-muted-foreground">Precios + IVA</span>
-          <span className="font-bold text-green-600">
-            Ahorras ${(precio - precioTransferencia).toFixed(2)} pagando por transferencia
-          </span>
+          <span className="text-muted-foreground">Precios incluyen IVA</span>
+          {precio - precioTransferencia > 0 && (
+            <span className="font-bold text-green-600">
+              Ahorras ${(precio - precioTransferencia).toFixed(2)} pagando por transferencia
+            </span>
+          )}
         </div>
       </>
     );
@@ -58,7 +60,7 @@ export function ProductPrice({ producto, variant = "card", showIva = true }: Pro
         {tieneDescuento && <div className="text-xs text-muted-foreground line-through">${precio.toFixed(2)}</div>}
         <div className="text-xl font-black text-brand-blue">
           ${precioNormal.toFixed(2)}
-          {showIva && <span className="text-xs font-normal text-muted-foreground ml-1">+ IVA</span>}
+          {showIva && <span className="text-xs font-normal text-muted-foreground ml-1">IVA incluido</span>}
         </div>
       </>
     );
@@ -71,7 +73,7 @@ export function ProductPrice({ producto, variant = "card", showIva = true }: Pro
         <div className="text-[10px] font-bold uppercase tracking-wide text-brand-red leading-tight">Precio transferencia</div>
         <div className="text-xl font-black text-brand-red leading-tight">
           ${precioTransferencia.toFixed(2)}
-          {showIva && <span className="text-[10px] font-normal text-muted-foreground ml-1">+ IVA</span>}
+          {showIva && <span className="text-[10px] font-normal text-muted-foreground ml-1">IVA incluido</span>}
         </div>
       </div>
       <div className="flex items-baseline justify-between gap-1 px-2">

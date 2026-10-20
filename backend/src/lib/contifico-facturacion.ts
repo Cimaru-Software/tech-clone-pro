@@ -109,12 +109,14 @@ function buildItems(compra: CompraFacturable) {
     }
 
     const serie = item.seriales.length > 0 ? item.seriales[0].serial : undefined;
+    const ivaPorc = Number(item.producto.ivaContificoPorc || "15");
 
+    // El precio guardado ya incluye IVA; Contífico espera el precio unitario sin IVA.
     return {
       contificoId: item.producto.contificoId,
       cantidad: item.cantidad,
-      precio: toNumber(item.precio),
-      ivaPorc: Number(item.producto.ivaContificoPorc || "15"),
+      precio: Math.round((toNumber(item.precio) / (1 + ivaPorc / 100)) * 1e6) / 1e6,
+      ivaPorc,
       serie,
     };
   });

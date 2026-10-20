@@ -9,11 +9,10 @@ export function getPrecioNormal(p: Precios): number {
   return Number((precio * (1 - Math.min(p.descuento, 100) / 100)).toFixed(2));
 }
 
-/** Precio con pago por transferencia, o null si el producto no tiene uno válido (debe ser menor al precio normal). */
+/** Precio con pago por transferencia (PVP3 de Contífico, tal cual), o null si el producto no tiene uno. */
 export function getPrecioTransferencia(p: Precios): number | null {
   if (p.precioTransferencia == null) return null;
   const transferencia = Number(p.precioTransferencia);
   if (!Number.isFinite(transferencia) || transferencia <= 0) return null;
-  if (transferencia >= getPrecioNormal(p)) return null;
   return Number(transferencia.toFixed(2));
 }

@@ -38,6 +38,7 @@ export interface ContificoProducto {
   precio_unitario?: string;
   pvp1?: string;
   pvp2?: string;
+  pvp3?: string;
   porcentaje_iva: string | number;
   tipo: string;
   estado: string;
@@ -409,6 +410,12 @@ export function getStockBodegaEcommerce(bodegas: ContificoStock[]): ContificoSto
 function sumarStock(bodegas: ContificoStock[]): number {
   // v2 devuelve cantidad como string ("5.00"), parseamos por si acaso
   return bodegas.reduce((sum, b) => sum + (parseFloat(String(b.cantidad)) || 0), 0);
+}
+
+// PVP3 de Contífico es el precio con transferencia (IVA incluido); null si no está definido.
+export function getPrecioTransferenciaContifico(cp: ContificoProducto): number | null {
+  const valor = parseFloat(cp.pvp3 ?? "");
+  return Number.isFinite(valor) && valor > 0 ? valor : null;
 }
 
 export function stockTotal(bodegas: ContificoStock[]): number {
