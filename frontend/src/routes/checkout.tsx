@@ -50,7 +50,7 @@ const PLUX_TRIGGER_DELAY_MS = 900;
 const PLUX_VISIBLE_LOADING_MS = 6000;
 
 export default function Checkout() {
-  const { items, subtotal, clear } = useCart();
+  const { items, subtotal: subtotalNormal, subtotalTransferencia, clear } = useCart();
   const { cliente, isAuthenticated, isLoading } = useAuth();
   const [step, setStep] = useState(1);
   const [purchaseId, setPurchaseId] = useState<string | null>(null);
@@ -89,6 +89,10 @@ export default function Checkout() {
       .catch(() => {});
   }, [backendUrl]);
 
+  // El precio de transferencia se aplica automáticamente al elegir "Transferencia" como método de pago.
+  const aplicaTransferencia = metodoPago === "transfer" && step >= 3;
+  const ahorroTransferencia = Math.max(0, subtotalNormal - subtotalTransferencia);
+  const subtotal = aplicaTransferencia ? subtotalTransferencia : subtotalNormal;
   const shipping = shipping_form.provincia ? (enviosPorProvincia[shipping_form.provincia] ?? 8) : 0;
   const tax = subtotal * (ivaPorcentaje / 100);
   const total = subtotal + shipping + tax;
@@ -160,7 +164,7 @@ export default function Checkout() {
               direccion: billing_form.direccion.trim(),
             },
             total,
-            items: items.map(i => ({ productoId: i.id, cantidad: i.qty, precio: itemPrice(i) })),
+            items: items.map(i => ({ productoId: i.id, cantidad: i.qty, precio: itemPagoPrice(i) })),
             pluxTransaccion: detail.id_transaccion || "",
             pluxToken: detail.token || "",
             pluxEstado: detail.state || "",
@@ -170,7 +174,7 @@ export default function Checkout() {
         if (!res.ok) throw new Error(result.error || "No se pudo registrar la compra");
         gaPurchase(
           result.compra.id,
-          items.map(i => ({ item_id: i.id, item_name: i.nombre, item_brand: i.marca, price: itemPrice(i), quantity: i.qty })),
+          items.map(i => ({ item_id: i.id, item_name: i.nombre, item_brand: i.marca, price: itemPagoPrice(i), quantity: i.qty })),
           total
         );
         setPurchaseId(result.compra.id);
@@ -188,6 +192,7 @@ export default function Checkout() {
   const itemName = (item: typeof items[number] & { name?: string }) => item.nombre || item.name || "Producto";
   const itemImage = (item: typeof items[number] & { image?: string }) => item.imagen || item.image || "/placeholder-product.png";
   const itemPrice = (item: typeof items[number] & { price?: number }) => Number(item.precio ?? item.price ?? 0);
+  const itemPagoPrice = (item: typeof items[number]) => metodoPago === "transfer" && item.precioTransferencia != null ? item.precioTransferencia : itemPrice(item);
   const itemOriginalPrice = (item: typeof items[number] & { oldPrice?: number }) => Number(item.precioOriginal ?? item.oldPrice ?? itemPrice(item));
 
   const submitTransferOrder = async (comprobanteFile: File) => {
@@ -207,7 +212,7 @@ export default function Checkout() {
       formData.append("facturaTelefono", billing_form.telefono.trim());
       formData.append("facturaDireccion", billing_form.direccion.trim());
       formData.append("total", String(total));
-      formData.append("items", JSON.stringify(items.map(i => ({ productoId: i.id, cantidad: i.qty, precio: itemPrice(i) }))));
+      formData.append("items", JSON.stringify(items.map(i => ({ productoId: i.id, cantidad: i.qty, precio: itemPagoPrice(i) }))));
       formData.append("comprobante", comprobanteFile);
 
       const res = await fetch(`${backendUrl}/api/compras`, {
@@ -219,7 +224,7 @@ export default function Checkout() {
       if (!res.ok) throw new Error(result.error || "No se pudo registrar la compra");
       gaPurchase(
         result.compra.id,
-        items.map(i => ({ item_id: i.id, item_name: i.nombre, item_brand: i.marca, price: itemPrice(i), quantity: i.qty })),
+        items.map(i => ({ item_id: i.id, item_name: i.nombre, item_brand: i.marca, price: itemPagoPrice(i), quantity: i.qty })),
         total
       );
       setPurchaseId(result.compra.id);
@@ -403,6 +408,9 @@ export default function Checkout() {
                           )}
                           <div className="font-bold text-brand-blue">${(itemPrice(i) * i.qty).toFixed(2)}</div>
                           <div className="text-xs text-muted-foreground">${itemPrice(i).toFixed(2)} c/u</div>
+                          {i.precioTransferencia != null && (
+                            <div className="text-xs font-bold text-brand-red">Transferencia: ${i.precioTransferencia.toFixed(2)} c/u</div>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -484,7 +492,7 @@ export default function Checkout() {
                   <h2 className="text-xl font-black text-brand-blue mb-4 flex items-center gap-2"><CreditCard className="h-5 w-5" /> 3. Método de pago</h2>
                   <div className="space-y-3">
                     {[
-                      { v: "transfer", t: "Transferencia bancaria", d: "Carga el comprobante para validar tu compra" },
+                      { v: "transfer", t: "Transferencia bancaria", d: ahorroTransferencia > 0 ? `Carga el comprobante para validar tu compra. Se aplica el precio transferencia: ahorras $${ahorroTransferencia.toFixed(2)} + IVA` : "Carga el comprobante para validar tu compra" },
                       { v: "card", t: "Tarjeta de crédito / débito", d: "Aceptamos tarjetas Produbanco, Bolivariano, Banco Internacional, Diners Club, Pichincha, Rumiñahui, Manabí, Loja, Amazonas" },
                     ].map((m) => (
                       <label key={m.v} className="flex items-start gap-3 border rounded p-3 has-[:checked]:border-brand-red has-[:checked]:bg-secondary cursor-pointer hover:border-brand-red">
@@ -586,13 +594,21 @@ export default function Checkout() {
             <aside className="bg-white rounded-lg p-6 h-fit lg:sticky lg:top-32">
               <h3 className="font-black text-brand-blue mb-3">Resumen del pedido</h3>
               <div className="text-sm space-y-2 border-b pb-3">
-                <div className="flex justify-between"><span>Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
+                <div className="flex justify-between"><span>Subtotal</span><span>${subtotalNormal.toFixed(2)}</span></div>
+                {aplicaTransferencia && ahorroTransferencia > 0 && (
+                  <div className="flex justify-between font-semibold text-brand-red"><span>Descuento precio transferencia</span><span>−${ahorroTransferencia.toFixed(2)}</span></div>
+                )}
                 <div className="flex justify-between"><span>Envío</span><span>{!shipping_form.provincia ? "Selecciona tu provincia" : shipping === 0 ? "GRATIS" : `$${shipping.toFixed(2)}`}</span></div>
                 <div className="flex justify-between"><span>IVA ({ivaPorcentaje}%)</span><span>${tax.toFixed(2)}</span></div>
               </div>
               <div className="flex justify-between font-black text-lg text-brand-blue mt-3">
                 <span>Total</span><span>${total.toFixed(2)}</span>
               </div>
+              {!aplicaTransferencia && ahorroTransferencia > 0 && (
+                <div className="mt-3 rounded border border-brand-red/40 bg-brand-red/5 p-2 text-xs text-brand-red font-semibold">
+                  Paga por transferencia y ahorra ${ahorroTransferencia.toFixed(2)} + IVA
+                </div>
+              )}
               <div className="bg-secondary rounded p-2 text-xs mt-4 flex items-center gap-2">
                 <Lock className="h-3 w-3" /> Compra protegida y encriptada
               </div>

@@ -9,7 +9,7 @@ interface Categoria { id: string; nombre: string; slug: string; subcategorias?: 
 interface ProductoImagen { id: string; path: string; orden: number; }
 interface Producto {
   id: string; nombre: string; marca: string; categoriaId: string;
-  categoria: Categoria; subcategoriaId?: string | null; subsubcategoriaId?: string | null; descripcion: string; precio: number; descuento: number;
+  categoria: Categoria; subcategoriaId?: string | null; subsubcategoriaId?: string | null; descripcion: string; precio: number; descuento: number; precioTransferencia?: number | string | null;
   destacado: boolean; stock: number; estado: "ACTIVO" | "INACTIVO"; imagenes: ProductoImagen[];
   contificoId?: string | null; contificoCode?: string | null; lastSyncedAt?: string | null;
 }
@@ -30,7 +30,7 @@ interface PreviewFile {
 const defaultForm = {
   nombre: "", marca: "", categoriaId: "", subcategoriaId: "" as string | null,
   subsubcategoriaId: "" as string | null, descripcion: "",
-  precio: 0, descuento: 0, destacado: false, stock: 0, estado: "ACTIVO" as Producto["estado"],
+  precio: 0, descuento: 0, precioTransferencia: "" as string, destacado: false, stock: 0, estado: "ACTIVO" as Producto["estado"],
 };
 
 const PAGE_SIZE = 20;
@@ -96,7 +96,7 @@ export default function ProductosPage() {
 
   function openEdit(p: Producto) {
     setEditId(p.id);
-    setForm({ nombre: p.nombre, marca: p.marca, categoriaId: p.categoriaId, subcategoriaId: p.subcategoriaId ?? null, subsubcategoriaId: p.subsubcategoriaId ?? null, descripcion: p.descripcion, precio: Number(p.precio), descuento: p.descuento, destacado: p.destacado, stock: p.stock, estado: p.estado });
+    setForm({ nombre: p.nombre, marca: p.marca, categoriaId: p.categoriaId, subcategoriaId: p.subcategoriaId ?? null, subsubcategoriaId: p.subsubcategoriaId ?? null, descripcion: p.descripcion, precio: Number(p.precio), descuento: p.descuento, precioTransferencia: p.precioTransferencia != null ? String(Number(p.precioTransferencia)) : "", destacado: p.destacado, stock: p.stock, estado: p.estado });
     setPreviewFiles([]);
     setExistingImages(p.imagenes || []);
     setError("");
@@ -150,7 +150,7 @@ export default function ProductosPage() {
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, precio: Number(form.precio), descuento: Number(form.descuento), stock: Number(form.stock), subcategoriaId: form.subcategoriaId || null, subsubcategoriaId: form.subsubcategoriaId || null }),
+        body: JSON.stringify({ ...form, precio: Number(form.precio), descuento: Number(form.descuento), precioTransferencia: form.precioTransferencia.trim() && Number(form.precioTransferencia) > 0 ? Number(form.precioTransferencia) : null, stock: Number(form.stock), subcategoriaId: form.subcategoriaId || null, subsubcategoriaId: form.subsubcategoriaId || null }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || "Error al guardar"); return; }
@@ -438,7 +438,12 @@ export default function ProductosPage() {
                         );
                       })()}
                     </td>
-                    <td style={{ padding: "0.75rem 1rem", fontSize: "0.875rem", fontWeight: "700", color: "#0B2C5F" }}>${Number(p.precio).toFixed(2)}</td>
+                    <td style={{ padding: "0.75rem 1rem", fontSize: "0.875rem", fontWeight: "700", color: "#0B2C5F" }}>
+                      ${Number(p.precio).toFixed(2)}
+                      {p.precioTransferencia != null && Number(p.precioTransferencia) > 0 && (
+                        <div style={{ fontSize: "0.7rem", fontWeight: "600", color: "#D71920", marginTop: "0.1rem" }}>Transf. ${Number(p.precioTransferencia).toFixed(2)}</div>
+                      )}
+                    </td>
                     <td style={{ padding: "0.75rem 1rem", fontSize: "0.875rem" }}>
                       {p.descuento > 0 ? <span style={{ background: "#fef3c7", color: "#92400e", padding: "0.2rem 0.5rem", borderRadius: "6px", fontWeight: "700", fontSize: "0.75rem" }}>{p.descuento}%</span> : <span style={{ color: "#cbd5e1" }}>—</span>}
                     </td>
@@ -783,6 +788,16 @@ export default function ProductosPage() {
                 <div>
                   <label style={labelStyle}>Descuento (%)</label>
                   <input style={inputStyle} type="number" min="0" max="100" value={form.descuento} onChange={e => setForm(f => ({ ...f, descuento: Number(e.target.value) }))} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Precio transferencia ($) <span style={{ fontWeight: 400, color: "#94a3b8" }}>opcional</span></label>
+                  <input style={inputStyle} type="number" min="0" step="0.01" placeholder="Sin precio de transferencia" value={form.precioTransferencia} onChange={e => setForm(f => ({ ...f, precioTransferencia: e.target.value }))} />
+                  {(() => {
+                    const pt = Number(form.precioTransferencia);
+                    const normal = Number(form.precio) * (1 - Math.min(Number(form.descuento) || 0, 100) / 100);
+                    if (!form.precioTransferencia.trim() || !(pt > 0) || pt < normal) return null;
+                    return <div style={{ fontSize: "0.7rem", color: "#b45309", marginTop: "0.25rem" }}>Debe ser menor al precio normal (${normal.toFixed(2)}) para mostrarse y aplicarse.</div>;
+                  })()}
                 </div>
                 <div>
                   <label style={labelStyle}>Stock</label>

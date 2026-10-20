@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Producto } from "@/types/product";
 import { gaAddToCart } from "@/lib/analytics";
+import { getPrecioTransferencia } from "@/lib/pricing";
 
 export type CartItem = {
   id: string;
@@ -9,6 +10,8 @@ export type CartItem = {
   precio: number;
   precioOriginal: number;
   descuento: number;
+  /** Precio unitario si el pago es por transferencia (solo si es menor a `precio`). */
+  precioTransferencia: number | null;
   imagen: string;
   qty: number;
 };
@@ -38,6 +41,7 @@ function normalizeCartItem(item: CartItem & { name?: string; brand?: string; pri
     marca: item.marca || item.brand || "",
     precio,
     precioOriginal: original,
+    precioTransferencia: getPrecioTransferencia({ precio: original, descuento, precioTransferencia: item.precioTransferencia }),
     imagen: item.imagen || item.image || "/placeholder-product.png",
     descuento,
     qty: Number(item.qty || 1),
@@ -52,6 +56,7 @@ type CartCtx = {
   clear: () => void;
   count: number;
   subtotal: number;
+  subtotalTransferencia: number;
   open: boolean;
   setOpen: (v: boolean) => void;
 };
@@ -99,12 +104,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
       precio: getDiscountedPrice(precioOriginal, descuento),
       precioOriginal,
       descuento,
+      precioTransferencia: getPrecioTransferencia({ precio: precioOriginal, descuento, precioTransferencia: p.precioTransferencia }),
       imagen: getImageUrl(p),
       qty,
     };
     setItems((prev) => {
       const existing = prev.find((i) => i.id === p.id);
-      if (existing) return prev.map((i) => i.id === p.id ? { ...i, qty: i.qty + qty } : i);
+      if (existing) return prev.map((i) => i.id === p.id ? { ...item, qty: i.qty + qty } : i);
       return [...prev, item];
     });
     gaAddToCart({ item_id: item.id, item_name: item.nombre, item_brand: item.marca, price: item.precio, quantity: qty });
@@ -116,8 +122,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const clear = () => setItems([]);
   const count = items.reduce((s, i) => s + i.qty, 0);
   const subtotal = items.reduce((s, i) => s + i.qty * Number(i.precio || 0), 0);
+  const subtotalTransferencia = items.reduce((s, i) => s + i.qty * Number(i.precioTransferencia ?? i.precio ?? 0), 0);
 
-  return <Ctx.Provider value={{ items, add, remove, setQty, clear, count, subtotal, open, setOpen }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ items, add, remove, setQty, clear, count, subtotal, subtotalTransferencia, open, setOpen }}>{children}</Ctx.Provider>;
 }
 
 export const useCart = () => {

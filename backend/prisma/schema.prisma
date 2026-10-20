@@ -63,6 +63,8 @@ model Producto {
   descripcion    String           @db.Text
   precio         Decimal          @db.Decimal(10, 2)
   descuento      Int              @default(0)
+  // Precio final para pagos por transferencia (opcional). Solo aplica si es menor al precio normal.
+  precioTransferencia Decimal?    @db.Decimal(10, 2)
   destacado      Boolean          @default(false)
   imagenes         ProductoImagen[]
   estado           EstadoProducto   @default(ACTIVO)

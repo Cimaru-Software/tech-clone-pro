@@ -3,6 +3,7 @@ import { useEffect, useState, useMemo } from "react";
 import { ChevronRight, ChevronDown, SlidersHorizontal, Search, ShoppingCart, X } from "lucide-react";
 import type { Producto, Categoria, Subcategoria } from "@/types/product";
 import { useCart } from "@/context/CartContext";
+import { ProductPrice } from "@/components/site/ProductPrice";
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
 
@@ -16,8 +17,6 @@ function getImageUrl(producto: Producto): string {
 function ProductCardBackend({ producto }: { producto: Producto }) {
   const { add } = useCart();
   const navigate = useNavigate();
-  const precio = Number(producto.precio);
-  const precioFinal = producto.descuento > 0 ? precio * (1 - producto.descuento / 100) : precio;
   const imgUrl = getImageUrl(producto);
 
   return (
@@ -42,13 +41,7 @@ function ProductCardBackend({ producto }: { producto: Producto }) {
         <h3 className="text-sm font-medium line-clamp-2 mt-0.5 min-h-[2.5rem]">{producto.nombre}</h3>
         <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{producto.descripcion}</p>
         <div className="mt-2">
-          {producto.descuento > 0 && (
-            <div className="text-xs text-muted-foreground line-through">${precio.toFixed(2)}</div>
-          )}
-          <div className="text-xl font-black text-brand-blue">
-            ${precioFinal.toFixed(2)}
-            <span className="text-xs font-normal text-muted-foreground ml-1">+ IVA</span>
-          </div>
+          <ProductPrice producto={producto} />
         </div>
         <button
           onClick={(e) => { e.stopPropagation(); if (producto.stock > 0) add(producto); }}

@@ -65,6 +65,7 @@ export async function POST(request: NextRequest) {
     descripcion: z.string().min(1),
     precio: z.number().positive(),
     descuento: z.number().min(0).max(100).default(0),
+    precioTransferencia: z.number().positive().nullable().optional(),
     destacado: z.boolean().default(false),
     stock: z.number().int().min(0).default(0),
     estado: z.enum(["ACTIVO", "INACTIVO"]).default("ACTIVO"),

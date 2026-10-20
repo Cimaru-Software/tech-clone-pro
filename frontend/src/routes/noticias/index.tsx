@@ -69,8 +69,8 @@ export default function Noticias() {
       <section className="gradient-hero text-white py-16">
         <div className="container-x text-center">
           <span className="bg-brand-red text-xs font-bold px-3 py-1 rounded">BLOG & NOTICIAS</span>
-          <h1 className="text-4xl md:text-5xl font-black mt-4">Noticias y novedades</h1>
-          <p className="mt-3 text-white/85 max-w-2xl mx-auto">Mantente informado sobre tecnología, consejos técnicos y las últimas novedades de La Casa del Computador.</p>
+          <h1 className="text-4xl md:text-5xl font-black mt-4">Tecnología con Propósito</h1>
+          <p className="mt-3 text-white/85 max-w-2xl mx-auto">Descubre cómo conectamos la tecnología con las personas a través de iniciativas que inspiran, alianzas que impulsan y experiencias que generan impacto</p>
         </div>
       </section>
 

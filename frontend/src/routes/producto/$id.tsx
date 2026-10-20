@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { ChevronRight, ChevronLeft, ShoppingCart, Tag, Layers } from "lucide-react";
 import type { Producto } from "@/types/product";
 import { useCart } from "@/context/CartContext";
+import { ProductPrice } from "@/components/site/ProductPrice";
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
 
@@ -70,8 +71,6 @@ export default function ProductoDetalle() {
 
   const imagenes = producto.imagenes || [];
   const hasImages = imagenes.length > 0;
-  const precio = Number(producto.precio);
-  const precioFinal = producto.descuento > 0 ? precio * (1 - producto.descuento / 100) : precio;
 
   function prev() { setImgIdx((i) => (i === 0 ? imagenes.length - 1 : i - 1)); }
   function next() { setImgIdx((i) => (i === imagenes.length - 1 ? 0 : i + 1)); }
@@ -180,16 +179,7 @@ export default function ProductoDetalle() {
 
             {/* Price */}
             <div className="mt-5 pb-5 border-b">
-              {producto.descuento > 0 && (
-                <div className="text-sm text-muted-foreground line-through">${precio.toFixed(2)}</div>
-              )}
-              <div className="flex items-end gap-3">
-                <span className="text-4xl font-black text-brand-blue">${precioFinal.toFixed(2)}</span>
-                <span className="text-sm font-normal text-muted-foreground mb-1">+ IVA</span>
-                {producto.descuento > 0 && (
-                  <span className="text-sm font-bold text-green-600 mb-1">Ahorras ${(precio - precioFinal).toFixed(2)}</span>
-                )}
-              </div>
+              <ProductPrice producto={producto} variant="detail" />
             </div>
 
             {/* Description */}

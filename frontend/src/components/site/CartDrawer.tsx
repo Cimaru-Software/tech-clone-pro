@@ -4,7 +4,7 @@ import { X, Trash2, Plus, Minus, ShoppingBag } from "lucide-react";
 import { gaBeginCheckout } from "@/lib/analytics";
 
 export function CartDrawer() {
-  const { items, open, setOpen, remove, setQty, subtotal } = useCart();
+  const { items, open, setOpen, remove, setQty, subtotal, subtotalTransferencia } = useCart();
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50">
@@ -36,6 +36,9 @@ export function CartDrawer() {
                   ${i.precio.toFixed(2)}
                   <span className="text-xs font-normal text-muted-foreground ml-1">+ IVA</span>
                 </div>
+                {i.precioTransferencia != null && (
+                  <div className="text-xs font-bold text-brand-red">Transferencia: ${i.precioTransferencia.toFixed(2)}</div>
+                )}
                 <div className="flex items-center gap-2 mt-1">
                   <button onClick={() => setQty(i.id, i.qty - 1)} className="h-7 w-7 border rounded grid place-items-center hover:bg-secondary"><Minus className="h-3 w-3" /></button>
                   <span className="text-sm w-6 text-center">{i.qty}</span>
@@ -49,6 +52,9 @@ export function CartDrawer() {
         {items.length > 0 && (
           <div className="border-t p-4 space-y-3">
             <div className="flex justify-between text-sm"><span>Subtotal</span><span className="font-bold">${subtotal.toFixed(2)}</span></div>
+            {subtotalTransferencia < subtotal && (
+              <div className="flex justify-between text-sm font-bold text-brand-red"><span>Pagando por transferencia</span><span>${subtotalTransferencia.toFixed(2)}</span></div>
+            )}
             <div className="text-xs text-muted-foreground">El envío y los impuestos se calculan en el checkout</div>
             <Link
               to="/checkout"

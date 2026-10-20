@@ -11,6 +11,7 @@ import brandTplink from "@/assets/brands/tplink.png";
 import brandZkteco from "@/assets/brands/zkteco.png";
 import brandCisco from "@/assets/brands/cisco.png";
 import { useCart } from "@/context/CartContext";
+import { ProductPrice } from "@/components/site/ProductPrice";
 import type { Producto } from "@/types/product";
 import { ShieldCheck, Truck, Headphones, CreditCard, Wrench, Camera, Fingerprint, Cable, Cpu, Wind, Tv, CircuitBoard, ArrowRight, ShoppingCart, ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -29,8 +30,6 @@ function getImageUrl(producto: Producto): string {
 
 function FeaturedProductCard({ producto }: { producto: Producto }) {
   const { add } = useCart();
-  const precio = Number(producto.precio);
-  const precioFinal = producto.descuento > 0 ? precio * (1 - producto.descuento / 100) : precio;
   const imgUrl = getImageUrl(producto);
 
   return (
@@ -50,11 +49,7 @@ function FeaturedProductCard({ producto }: { producto: Producto }) {
         <h3 className="text-sm font-medium line-clamp-2 mt-0.5 min-h-[2.5rem]">{producto.nombre}</h3>
         <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{producto.descripcion}</p>
         <div className="mt-2">
-          {producto.descuento > 0 && <div className="text-xs text-muted-foreground line-through">${precio.toFixed(2)}</div>}
-          <div className="text-xl font-black text-brand-blue">
-            ${precioFinal.toFixed(2)}
-            <span className="text-xs font-normal text-muted-foreground ml-1">+ IVA</span>
-          </div>
+          <ProductPrice producto={producto} />
         </div>
         <button
           onClick={(e) => { e.preventDefault(); if (producto.stock > 0) add(producto); }}

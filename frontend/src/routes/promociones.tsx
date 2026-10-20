@@ -1,6 +1,7 @@
 import { Link } from "@/lib/router";
 import { useEffect, useState } from "react";
 import { useCart } from "@/context/CartContext";
+import { ProductPrice } from "@/components/site/ProductPrice";
 import type { Producto } from "@/types/product";
 import { ShoppingCart } from "lucide-react";
 
@@ -13,8 +14,6 @@ function getImageUrl(producto: Producto) {
 
 function OfferCard({ producto }: { producto: Producto }) {
   const { add } = useCart();
-  const precio = Number(producto.precio);
-  const precioFinal = producto.descuento > 0 ? precio * (1 - producto.descuento / 100) : precio;
 
   return (
     <Link to={`/producto/${producto.id}`} className="bg-white border rounded-lg overflow-hidden hover:shadow-card-hover transition-shadow group flex flex-col">
@@ -30,8 +29,7 @@ function OfferCard({ producto }: { producto: Producto }) {
         <div className="text-[11px] uppercase font-semibold text-brand-blue tracking-wide">{producto.marca}</div>
         <div className="text-xs sm:text-sm font-semibold text-foreground leading-tight mt-1 flex-1 line-clamp-2">{producto.nombre}</div>
         <div className="mt-2">
-          <div className="text-xs text-muted-foreground line-through">${precio.toFixed(2)}</div>
-          <div className="text-lg font-black text-brand-blue">${precioFinal.toFixed(2)}</div>
+          <ProductPrice producto={producto} showIva={false} />
         </div>
         <button
           onClick={(e) => { e.preventDefault(); if (producto.stock > 0) add(producto); }}

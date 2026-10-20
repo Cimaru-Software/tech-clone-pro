@@ -44,6 +44,15 @@ function getPrecioFinal(precio: unknown, descuento: number) {
   return Number((base * (1 - Math.min(descuento, 100) / 100)).toFixed(2));
 }
 
+// Con transferencia se usa el precio de transferencia si existe y es menor al precio normal.
+function getPrecioSegunPago(producto: { precio: unknown; descuento: number; precioTransferencia: unknown }, metodoPago: string) {
+  const precioNormal = getPrecioFinal(producto.precio, producto.descuento);
+  if (metodoPago !== "transfer" || producto.precioTransferencia == null) return precioNormal;
+  const transferencia = Number(producto.precioTransferencia);
+  if (!Number.isFinite(transferencia) || transferencia <= 0 || transferencia >= precioNormal) return precioNormal;
+  return Number(transferencia.toFixed(2));
+}
+
 async function getTotal(subtotal: number, provincia: string) {
   const [ivaConfig, envioConfig] = await Promise.all([
     prisma.configuracionIva.findFirst(),
@@ -157,11 +166,11 @@ export async function POST(request: NextRequest) {
 
     const productos = await prisma.producto.findMany({
       where: { id: { in: items.map((item) => item.productoId) } },
-      select: { id: true, precio: true, descuento: true },
+      select: { id: true, precio: true, descuento: true, precioTransferencia: true },
     });
     const precios = new Map(productos.map((producto) => [
       producto.id,
-      getPrecioFinal(producto.precio, producto.descuento),
+      getPrecioSegunPago(producto, metodoPago),
     ]));
 
     const itemsConPrecio = items.map((item) => {

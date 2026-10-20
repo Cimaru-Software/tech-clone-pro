@@ -12,6 +12,7 @@ const productoUpdateSchema = z.object({
   descripcion: z.string().min(1).optional(),
   precio: z.number().positive().optional(),
   descuento: z.number().min(0).max(100).optional(),
+  precioTransferencia: z.number().positive().nullable().optional(),
   destacado: z.boolean().optional(),
   stock: z.number().int().min(0).optional(),
   estado: z.enum(["ACTIVO", "INACTIVO"]).optional(),
