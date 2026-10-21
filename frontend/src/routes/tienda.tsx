@@ -4,6 +4,7 @@ import { ChevronRight, ChevronDown, SlidersHorizontal, Search, ShoppingCart, X }
 import type { Producto, Categoria, Subcategoria } from "@/types/product";
 import { useCart } from "@/context/CartContext";
 import { ProductPrice } from "@/components/site/ProductPrice";
+import { StockInfo } from "@/components/site/StockInfo";
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
 
@@ -42,6 +43,7 @@ function ProductCardBackend({ producto }: { producto: Producto }) {
         <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{producto.descripcion}</p>
         <div className="mt-2">
           <ProductPrice producto={producto} />
+          <StockInfo stock={producto.stock} />
         </div>
         <button
           onClick={(e) => { e.stopPropagation(); if (producto.stock > 0) add(producto); }}

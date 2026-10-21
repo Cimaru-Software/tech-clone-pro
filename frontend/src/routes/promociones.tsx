@@ -2,6 +2,7 @@ import { Link } from "@/lib/router";
 import { useEffect, useState } from "react";
 import { useCart } from "@/context/CartContext";
 import { ProductPrice } from "@/components/site/ProductPrice";
+import { StockInfo } from "@/components/site/StockInfo";
 import type { Producto } from "@/types/product";
 import { ShoppingCart } from "lucide-react";
 
@@ -30,6 +31,7 @@ function OfferCard({ producto }: { producto: Producto }) {
         <div className="text-xs sm:text-sm font-semibold text-foreground leading-tight mt-1 flex-1 line-clamp-2">{producto.nombre}</div>
         <div className="mt-2">
           <ProductPrice producto={producto} showIva={false} />
+          <StockInfo stock={producto.stock} />
         </div>
         <button
           onClick={(e) => { e.preventDefault(); if (producto.stock > 0) add(producto); }}

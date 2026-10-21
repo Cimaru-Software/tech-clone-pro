@@ -4,6 +4,7 @@ import { ChevronRight, ChevronLeft, ShoppingCart, Tag, Layers } from "lucide-rea
 import type { Producto } from "@/types/product";
 import { useCart } from "@/context/CartContext";
 import { ProductPrice } from "@/components/site/ProductPrice";
+import { StockInfo } from "@/components/site/StockInfo";
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
 
@@ -180,6 +181,7 @@ export default function ProductoDetalle() {
             {/* Price */}
             <div className="mt-5 pb-5 border-b">
               <ProductPrice producto={producto} variant="detail" />
+              <StockInfo stock={producto.stock} variant="detail" />
             </div>
 
             {/* Description */}

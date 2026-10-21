@@ -12,6 +12,7 @@ import brandZkteco from "@/assets/brands/zkteco.png";
 import brandCisco from "@/assets/brands/cisco.png";
 import { useCart } from "@/context/CartContext";
 import { ProductPrice } from "@/components/site/ProductPrice";
+import { StockInfo } from "@/components/site/StockInfo";
 import type { Producto } from "@/types/product";
 import { ShieldCheck, Truck, Headphones, CreditCard, Wrench, Camera, Fingerprint, Cable, Cpu, Wind, Tv, CircuitBoard, ArrowRight, ShoppingCart, ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -50,6 +51,7 @@ function FeaturedProductCard({ producto }: { producto: Producto }) {
         <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{producto.descripcion}</p>
         <div className="mt-2">
           <ProductPrice producto={producto} />
+          <StockInfo stock={producto.stock} />
         </div>
         <button
           onClick={(e) => { e.preventDefault(); if (producto.stock > 0) add(producto); }}
