@@ -34,7 +34,7 @@ export function ProductPrice({ producto, variant = "card", showIva = true }: Pro
         {tieneDescuento && <div className="text-sm text-muted-foreground line-through mb-1">${precio.toFixed(2)}</div>}
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-lg border-2 border-brand-red bg-brand-red/5 px-4 py-3">
-            <div className="text-xs font-bold uppercase tracking-wide text-brand-red">Precio transferencia</div>
+            <div className="text-xs font-bold uppercase tracking-wide text-brand-red">Promo transferencia</div>
             <div className="text-3xl lg:text-4xl font-black text-brand-red leading-tight mt-0.5">${precioTransferencia.toFixed(2)}</div>
           </div>
           <div className="rounded-lg border bg-white px-4 py-3">
@@ -70,7 +70,7 @@ export function ProductPrice({ producto, variant = "card", showIva = true }: Pro
     <div className="space-y-1">
       {tieneDescuento && <div className="text-xs text-muted-foreground line-through">${precio.toFixed(2)}</div>}
       <div className="rounded border border-brand-red/50 bg-brand-red/5 px-2 py-1">
-        <div className="text-[10px] font-bold uppercase tracking-wide text-brand-red leading-tight">Precio transferencia</div>
+        <div className="text-[10px] font-bold uppercase tracking-wide text-brand-red leading-tight">Promo transferencia</div>
         <div className="text-xl font-black text-brand-red leading-tight">
           ${precioTransferencia.toFixed(2)}
           {showIva && <span className="text-[10px] font-normal text-muted-foreground ml-1">IVA incluido</span>}

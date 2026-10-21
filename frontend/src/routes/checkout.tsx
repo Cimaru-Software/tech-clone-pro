@@ -493,7 +493,7 @@ export default function Checkout() {
                   <h2 className="text-xl font-black text-brand-blue mb-4 flex items-center gap-2"><CreditCard className="h-5 w-5" /> 3. Método de pago</h2>
                   <div className="space-y-3">
                     {[
-                      { v: "transfer", t: "Transferencia bancaria", d: ahorroTransferencia > 0 ? `Carga el comprobante para validar tu compra. Se aplica el precio transferencia: ahorras $${ahorroTransferencia.toFixed(2)}` : "Carga el comprobante para validar tu compra" },
+                      { v: "transfer", t: "Transferencia bancaria", d: ahorroTransferencia > 0 ? `Carga el comprobante para validar tu compra. Se aplica la promo transferencia: ahorras $${ahorroTransferencia.toFixed(2)}` : "Carga el comprobante para validar tu compra" },
                       { v: "card", t: "Tarjeta de crédito / débito", d: "Aceptamos tarjetas Produbanco, Bolivariano, Banco Internacional, Diners Club, Pichincha, Rumiñahui, Manabí, Loja, Amazonas" },
                     ].map((m) => (
                       <label key={m.v} className="flex items-start gap-3 border rounded p-3 has-[:checked]:border-brand-red has-[:checked]:bg-secondary cursor-pointer hover:border-brand-red">
@@ -597,10 +597,10 @@ export default function Checkout() {
               <div className="text-sm space-y-2 border-b pb-3">
                 <div className="flex justify-between"><span>Subtotal</span><span>${subtotalNormal.toFixed(2)}</span></div>
                 {aplicaTransferencia && ahorroTransferencia > 0 && (
-                  <div className="flex justify-between font-semibold text-brand-red"><span>Descuento precio transferencia</span><span>−${ahorroTransferencia.toFixed(2)}</span></div>
+                  <div className="flex justify-between font-semibold text-brand-red"><span>Descuento promo transferencia</span><span>−${ahorroTransferencia.toFixed(2)}</span></div>
                 )}
                 {aplicaTransferencia && ahorroTransferencia < 0 && (
-                  <div className="flex justify-between font-semibold"><span>Ajuste precio transferencia</span><span>+${(-ahorroTransferencia).toFixed(2)}</span></div>
+                  <div className="flex justify-between font-semibold"><span>Ajuste promo transferencia</span><span>+${(-ahorroTransferencia).toFixed(2)}</span></div>
                 )}
                 <div className="flex justify-between"><span>Envío</span><span>{!shipping_form.provincia ? "Selecciona tu provincia" : shipping === 0 ? "GRATIS" : `$${shipping.toFixed(2)}`}</span></div>
               </div>
