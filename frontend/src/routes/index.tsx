@@ -372,7 +372,7 @@ export default function Home() {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
             {[
-              { i: Wrench, t: "Reparación PC", s: "Diagnóstico gratuito" },
+              { i: Wrench, t: "Reparación PC", s: "Diagnóstico profesional" },
               { i: Camera, t: "CCTV", s: "Instalación llave en mano" },
               { i: Cpu, t: "Cercos eléctricos", s: "Perimetrales certificados" },
               { i: Fingerprint, t: "Biometría", s: "Control de acceso" },
