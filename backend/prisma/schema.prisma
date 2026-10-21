@@ -63,7 +63,7 @@ model Producto {
   descripcion    String           @db.Text
   precio         Decimal          @db.Decimal(10, 2)
   descuento      Int              @default(0)
-  // Precio final para pagos por transferencia (opcional). Solo aplica si es menor al precio normal.
+  // Precio final (IVA incluido) para pagos por transferencia. Viene del PVP3 de Contífico + IVA.
   precioTransferencia Decimal?    @db.Decimal(10, 2)
   destacado      Boolean          @default(false)
   imagenes         ProductoImagen[]

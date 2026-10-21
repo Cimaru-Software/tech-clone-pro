@@ -412,10 +412,23 @@ function sumarStock(bodegas: ContificoStock[]): number {
   return bodegas.reduce((sum, b) => sum + (parseFloat(String(b.cantidad)) || 0), 0);
 }
 
-// PVP3 de Contífico es el precio con transferencia (IVA incluido); null si no está definido.
+// Contífico guarda los PVP sin IVA; la web trabaja con precios finales (IVA incluido).
+function aplicarIvaContifico(valor: number, cp: ContificoProducto): number {
+  const ivaPorc = Number(cp.porcentaje_iva ?? 15);
+  const factor = 1 + (Number.isFinite(ivaPorc) ? ivaPorc : 15) / 100;
+  return Math.round(valor * factor * 100) / 100;
+}
+
+// PVP1 de Contífico (v1: precio_unitario) es el precio normal / tarjeta. Devuelve el valor con IVA, 0 si no hay.
+export function getPrecioNormalContifico(cp: ContificoProducto): number {
+  const valor = parseFloat(cp.pvp1 ?? cp.precio_unitario ?? "");
+  return Number.isFinite(valor) && valor > 0 ? aplicarIvaContifico(valor, cp) : 0;
+}
+
+// PVP3 de Contífico es el precio con transferencia. Devuelve el valor con IVA, null si no está definido.
 export function getPrecioTransferenciaContifico(cp: ContificoProducto): number | null {
   const valor = parseFloat(cp.pvp3 ?? "");
-  return Number.isFinite(valor) && valor > 0 ? valor : null;
+  return Number.isFinite(valor) && valor > 0 ? aplicarIvaContifico(valor, cp) : null;
 }
 
 export function stockTotal(bodegas: ContificoStock[]): number {

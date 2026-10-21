@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyAdminToken } from "@/lib/auth";
-import { getPrecioTransferenciaContifico, getProductos, getSeriales } from "@/lib/contifico";
+import { getPrecioNormalContifico, getPrecioTransferenciaContifico, getProductos, getSeriales } from "@/lib/contifico";
 
 const BATCH_SIZE = 10;
 
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
 
                 // getProductos calculó el kardex únicamente de Bodega Ecommerce.
                 const stockActual = cp.cantidad_stock ?? 0;
-                const precio = parseFloat(precioStr) || 0;
+                const precio = getPrecioNormalContifico(cp);
                 const ivaPorc = String(cp.porcentaje_iva ?? "15");
                 const precioTransferencia = getPrecioTransferenciaContifico(cp);
 
