@@ -457,8 +457,10 @@ export function buildDocumentoFromPedido(params: {
   let subtotal0 = 0;
   let subtotal12 = 0;
 
+  const round2 = (value: number) => Math.round(value * 100) / 100;
+
   const detalles: ContificoDocumentoDetalle[] = params.items.map((item) => {
-    const base = item.precio * item.cantidad;
+    const base = round2(item.precio * item.cantidad);
     const con_iva = item.ivaPorc > 0;
     if (con_iva) subtotal12 += base;
     else subtotal0 += base;
@@ -476,11 +478,15 @@ export function buildDocumentoFromPedido(params: {
     };
   });
 
-  const iva = params.items.reduce((sum, item) => {
-    const base = item.precio * item.cantidad;
+  // Debe y haber del asiento en Contífico tienen que cuadrar exacto: total se arma
+  // con los valores ya redondeados que se envían.
+  subtotal0 = round2(subtotal0);
+  subtotal12 = round2(subtotal12);
+  const iva = round2(params.items.reduce((sum, item) => {
+    const base = round2(item.precio * item.cantidad);
     return sum + (base * item.ivaPorc) / 100;
-  }, 0);
-  const total = subtotal0 + subtotal12 + iva;
+  }, 0));
+  const total = round2(subtotal0 + subtotal12 + iva);
 
   return {
     pos,
@@ -491,12 +497,12 @@ export function buildDocumentoFromPedido(params: {
     tipo_registro: "CLI",
     estado: "C",
     descripcion: params.descripcion,
-    subtotal_0: Math.round(subtotal0 * 100) / 100,
-    subtotal_12: Math.round(subtotal12 * 100) / 100,
+    subtotal_0: subtotal0,
+    subtotal_12: subtotal12,
     ice: 0,
     servicio: 0,
-    iva: Math.round(iva * 100) / 100,
-    total: Math.round(total * 100) / 100,
+    iva,
+    total,
     adicional1: params.descripcion,
     adicional2: referenciaBodega,
     cliente: params.cliente,

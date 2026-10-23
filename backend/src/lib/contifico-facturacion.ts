@@ -88,6 +88,22 @@ function buildCliente(compra: CompraFacturable): ContificoCliente {
   };
 }
 
+// Contífico rechaza el documento si el asiento no cuadra al centavo, así que el
+// precio sin IVA va a 2 decimales. Entre los candidatos cercanos se elige el que
+// al sumarle el IVA reproduce el monto cobrado.
+function precioSinIva(precioConIva: number, cantidad: number, ivaPorc: number) {
+  const objetivo = money(precioConIva * cantidad);
+  const aproximado = money(precioConIva / (1 + ivaPorc / 100));
+  const candidatos = [aproximado, money(aproximado - 0.01), money(aproximado + 0.01)];
+  const totalCon = (precio: number) => {
+    const base = money(precio * cantidad);
+    return money(base + money((base * ivaPorc) / 100));
+  };
+  return candidatos.reduce((mejor, precio) =>
+    Math.abs(totalCon(precio) - objetivo) < Math.abs(totalCon(mejor) - objetivo) ? precio : mejor
+  );
+}
+
 function buildItems(compra: CompraFacturable) {
   const fallbackProductId = process.env.CONTIFICO_BILLING_FALLBACK_PRODUCT_ID;
   const fallbackIvaPorc = Number(process.env.CONTIFICO_BILLING_FALLBACK_IVA_PORC || "15");
@@ -115,7 +131,7 @@ function buildItems(compra: CompraFacturable) {
     return {
       contificoId: item.producto.contificoId,
       cantidad: item.cantidad,
-      precio: Math.round((toNumber(item.precio) / (1 + ivaPorc / 100)) * 1e6) / 1e6,
+      precio: precioSinIva(toNumber(item.precio), item.cantidad, ivaPorc),
       ivaPorc,
       serie,
     };
