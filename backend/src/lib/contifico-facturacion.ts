@@ -1,5 +1,11 @@
 import type { Compra, Prisma } from "@prisma/client";
-import { buildDocumentoFromPedido, crearDocumento, crearMovimientoEgreso, resolveBodegaEcommerceId } from "@/lib/contifico";
+import {
+  buildDocumentoFromPedido,
+  crearDocumento,
+  crearMovimientoTransferencia,
+  resolveBodegaEcommerceId,
+  resolveBodegaFacturacionId,
+} from "@/lib/contifico";
 import type { ContificoCliente } from "@/lib/contifico";
 import { prisma } from "@/lib/prisma";
 
@@ -196,6 +202,7 @@ export async function emitirFacturaContifico(compraId: string) {
   }
 
   const items = buildItems(compra);
+  const traslado = await trasladarABodegaFacturacion(compra);
 
   try {
     const doc = buildDocumentoFromPedido({
@@ -218,36 +225,65 @@ export async function emitirFacturaContifico(compraId: string) {
     });
 
     await logContifico(compra.id, "ok", `Factura emitida: ${resp.id}`);
-    await descontarStockBodegaEcommerce(compra.id, items);
     return factura;
   } catch (err) {
     await logContifico(compra.id, "error", "Error al emitir factura", String(err));
+    if (traslado) await revertirTraslado(compra.id, traslado);
     throw err;
   }
 }
 
-// Crea un movimiento EGR en Contífico para descontar de BODEGA ECOMMERCE el
-// stock de los productos vendidos. La factura ya fue emitida en este punto;
-// un fallo aquí no debe revertir la factura, solo queda registrado en el log
-// para revisión manual (el stock local ya se descuenta por separado al aprobar la compra).
-async function descontarStockBodegaEcommerce(
-  compraId: string,
-  items: Array<{ contificoId: string; cantidad: number; serie?: string }>
-) {
+type Traslado = {
+  origen: string;
+  destino: string;
+  detalles: Array<{ producto_id: string; cantidad: number; serie?: string }>;
+};
+
+// La factura emitida por API descuenta inventario de la bodega del punto de
+// venta (Bodega Principal), no de BODEGA ECOMMERCE. Antes de facturar se
+// trasladan los productos vendidos de Ecommerce a esa bodega, así el egreso de
+// la factura es el único y el neto queda: Ecommerce -1, Principal 0.
+// Un fallo aquí no bloquea la factura; queda en el log para revisión manual.
+async function trasladarABodegaFacturacion(compra: CompraFacturable): Promise<Traslado | null> {
+  const detalles = compra.items.flatMap((item) => {
+    if (!item.producto.contificoId) return [];
+    if (item.seriales.length > 0) {
+      return item.seriales.map((s) => ({ producto_id: item.producto.contificoId!, cantidad: 1, serie: s.serial }));
+    }
+    return [{ producto_id: item.producto.contificoId, cantidad: item.cantidad }];
+  });
+  if (detalles.length === 0) return null;
+
   try {
-    const bodegaId = await resolveBodegaEcommerceId();
-    await crearMovimientoEgreso({
-      bodega_id: bodegaId,
+    const [origen, destino] = await Promise.all([resolveBodegaEcommerceId(), resolveBodegaFacturacionId()]);
+    if (origen === destino) return null;
+
+    await crearMovimientoTransferencia({
+      bodega_id: origen,
+      bodega_destino_id: destino,
       fecha: todayEc(),
-      descripcion: `Venta e-commerce #${compraId}`,
-      detalles: items.map((item) => ({
-        producto_id: item.contificoId,
-        cantidad: item.cantidad,
-        ...(item.serie ? { serie: item.serie } : {}),
-      })),
+      descripcion: `Venta e-commerce #${compra.id} | Traslado a bodega de facturación`,
+      detalles,
     });
-    await logContifico(compraId, "ok", "Movimiento EGR de inventario creado en BODEGA ECOMMERCE");
+    await logContifico(compra.id, "ok", "Traslado TRA de BODEGA ECOMMERCE a bodega de facturación creado");
+    return { origen, destino, detalles };
   } catch (err) {
-    await logContifico(compraId, "error", "Error al crear movimiento EGR de inventario", String(err));
+    await logContifico(compra.id, "error", "Error al crear traslado TRA a bodega de facturación", String(err));
+    return null;
+  }
+}
+
+async function revertirTraslado(compraId: string, traslado: Traslado) {
+  try {
+    await crearMovimientoTransferencia({
+      bodega_id: traslado.destino,
+      bodega_destino_id: traslado.origen,
+      fecha: todayEc(),
+      descripcion: `Reverso traslado venta e-commerce #${compraId} (factura no emitida)`,
+      detalles: traslado.detalles,
+    });
+    await logContifico(compraId, "ok", "Traslado TRA revertido por factura no emitida");
+  } catch (err) {
+    await logContifico(compraId, "error", "Error al revertir traslado TRA", String(err));
   }
 }

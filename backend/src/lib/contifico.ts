@@ -69,6 +69,7 @@ export interface ContificoMovimientoDetalle {
 
 export interface ContificoMovimientoInventario {
   bodega_id: string;
+  bodega_destino_id?: string;
   tipo: "ING" | "EGR" | "TRA" | "AJU";
   fecha: string; // dd/MM/yyyy
   descripcion: string;
@@ -313,12 +314,24 @@ export async function resolveBodegaEcommerceId(): Promise<string> {
   return bodega.id;
 }
 
-// Crea un movimiento de egreso (EGR) en Contífico para descontar stock de
-// la bodega ecommerce tras una venta facturada.
-export async function crearMovimientoEgreso(
-  mov: Omit<ContificoMovimientoInventario, "tipo">
+// Resuelve la bodega de la que descuenta inventario la factura emitida por API.
+// No se elige en el documento: la define el punto de venta en Contífico
+// (hoy "Bodega Principal").
+export async function resolveBodegaFacturacionId(): Promise<string> {
+  const bodegaIdEnv = process.env.CONTIFICO_BODEGA_FACTURACION_ID;
+  if (bodegaIdEnv) return bodegaIdEnv;
+
+  const nombre = process.env.CONTIFICO_BODEGA_FACTURACION_NOMBRE || "Bodega Principal";
+  const bodega = await getBodegaPorNombre(nombre);
+  if (!bodega) throw new Error(`No se encontró en Contífico la bodega "${nombre}"`);
+  return bodega.id;
+}
+
+// Crea una transferencia (TRA) en Contífico de bodega_id a bodega_destino_id.
+export async function crearMovimientoTransferencia(
+  mov: Omit<ContificoMovimientoInventario, "tipo"> & { bodega_destino_id: string }
 ): Promise<{ id: string }> {
-  const body: ContificoMovimientoInventario = { ...mov, tipo: "EGR" };
+  const body: ContificoMovimientoInventario = { ...mov, tipo: "TRA" };
   const res = await fetch(`${BASE_URL_V1}/movimiento-inventario/?format=json`, {
     method: "POST",
     headers: headers("billing"),
@@ -326,7 +339,7 @@ export async function crearMovimientoEgreso(
   });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`Contífico crearMovimientoEgreso: ${res.status} ${text}`);
+    throw new Error(`Contífico crearMovimientoTransferencia: ${res.status} ${text}`);
   }
   return res.json();
 }
